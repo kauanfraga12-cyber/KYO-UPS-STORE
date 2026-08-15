@@ -7,6 +7,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Rye&family=Righteous&family=Manrope:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase-config.js"></script>
 <style>
   /* ================= TOKENS ================= */
   :root{
@@ -116,6 +118,12 @@
   .statusbar .mini-links{display:flex; gap:16px; align-items:center;}
   .statusbar .mini-links a{color:var(--text-dim); display:flex; align-items:center; gap:6px; transition:color .15s;}
   .statusbar .mini-links a:hover{color:var(--text);}
+  .db-badge{
+    display:inline-flex; align-items:center; gap:5px; font-family:var(--font-mono); font-size:0.68rem;
+    padding:2px 9px; border-radius:999px; border:1px solid var(--border-strong); color:var(--text-faint);
+  }
+  .db-badge.on{color:var(--ok); border-color:rgba(52,211,153,0.4);}
+  .db-badge.off{color:var(--warn); border-color:rgba(251,191,36,0.4);}
 
   /* ================= NAV ================= */
   nav.mainnav{
@@ -593,6 +601,7 @@
       <span style="color:var(--text-faint); letter-spacing:0.1em;">UPS STATUS</span>
       <span class="status-dot" id="statusDot"></span>
       <span id="statusText">Carregando status…</span>
+      <span class="db-badge off" id="dbBadge" title="Modo de armazenamento de dados">• local</span>
     </div>
     <div class="mini-links">
       <span>Pagamento apenas via PIX</span>
@@ -697,7 +706,7 @@
       <div class="feature-card">
         <div class="f-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
         <h4>Chat geral</h4>
-        <p>Conversa entre clientes, com assistente de suporte integrado.</p>
+        <p>Conversa entre clientes em tempo real, com assistente de suporte integrado.</p>
       </div>
       <div class="feature-card">
         <div class="f-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></div>
@@ -889,7 +898,8 @@
     <div id="adminLoginView">
       <div class="form-card admin-login-card">
         <h3 style="margin-bottom:6px;">Acesso da Equipe</h3>
-        <p style="color:var(--text-dim); font-size:0.85rem; margin-bottom:18px;">Área restrita ao proprietário.</p>
+        <p style="color:var(--text-dim); font-size:0.85rem; margin-bottom:12px;">Área restrita ao proprietário.</p>
+        <p id="adminLoginNote" style="color:var(--teal); font-size:0.8rem; margin-bottom:12px; display:none;"></p>
         <div class="field"><input id="adminPassInput" type="password" placeholder="Senha de acesso"></div>
         <button class="btn btn-primary btn-block" id="adminLoginBtn">Entrar</button>
         <p id="adminLoginError" style="color:var(--danger); font-size:0.8rem; margin-top:10px; display:none;">Senha incorreta.</p>
@@ -1060,16 +1070,27 @@
   "use strict";
 
   /* ============================================================
-     CAMADA DE DADOS (banco de dados)
-     Usa window.storage (compartilhado) quando disponível,
-     com fallback para localStorage.
+     SUPABASE — conexão
+     Usa o Supabase quando configurado no supabase-config.js.
+     Caso contrário, usa storage local (modo local).
      ============================================================ */
-  const store = window.storage || {
-    async get(k, shared){ const v = localStorage.getItem('kvd_'+k); if(v===null) throw new Error('not found'); return {value:v}; },
+  var SUPABASE_CFG = window.SUPABASE_CONFIG || null;
+  var SUPABASE_URL = (SUPABASE_CFG && SUPABASE_CFG.url && SUPABASE_CFG.url.indexOf('COLE_') === -1) ? SUPABASE_CFG.url : null;
+  var SUPABASE_KEY = (SUPABASE_CFG && SUPABASE_CFG.anonKey && SUPABASE_CFG.anonKey.indexOf('COLE_') === -1) ? SUPABASE_CFG.anonKey : null;
+  var USE_SUPABASE = !!(window.supabase && SUPABASE_URL && SUPABASE_KEY);
+  var sb = USE_SUPABASE ? supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : null;
+
+  var SEED_ADMIN = { salt: 'kyosalt01', hash: 'a52a584aab48746ce8cde67c38730c3b718d8fa4146d78d257d3e6344ef51eda' };
+
+  /* ============================================================
+     CAMADA DE DADOS LOCAL (fallback)
+     ============================================================ */
+  var store = window.storage || {
+    async get(k, shared){ var v = localStorage.getItem('kvd_'+k); if(v===null) throw new Error('not found'); return {value:v}; },
     async set(k, v, shared){ localStorage.setItem('kvd_'+k, String(v)); return {ok:true}; }
   };
   async function dbGet(key, def){
-    try{ const r = await store.get(key, true); return JSON.parse(r.value); }
+    try{ var r = await store.get(key, true); return JSON.parse(r.value); }
     catch(e){ return def; }
   }
   async function dbSet(key, val){
@@ -1080,17 +1101,17 @@
   /* ============================================================
      CONSTANTES
      ============================================================ */
-  const DEFAULT_ADMIN_PASS = "impala67";
-  const WHATS_DEFAULT = "https://chat.whatsapp.com/CT6bm99cG9HEDHXmhUlUd6";
+  var DEFAULT_ADMIN_PASS = "impala67";
+  var WHATS_DEFAULT = "https://chat.whatsapp.com/CT6bm99cG9HEDHXmhUlUd6";
 
-  const DEFAULT_CONFIG = {
+  var DEFAULT_CONFIG = {
     shopName: "Porto das Frutas",
     tagline: "Upamos sua conta com segurança: maestria, níveis, fragmentos, hakis, leviatã e muito mais — simule o valor final, crie sua conta e pague via PIX.",
     status: "green",
     whats: WHATS_DEFAULT
   };
 
-  const DEFAULT_PRICES = [
+  var DEFAULT_PRICES = [
     { id:"maestria", label:"Maestria", icon:"🍓", items:[
       {name:"50 Maestria", price:0.50},{name:"100 Maestria", price:1.00},{name:"150 Maestria", price:1.50},
       {name:"200 Maestria", price:2.00},{name:"250 Maestria", price:2.50},{name:"300 Maestria", price:3.00},
@@ -1166,7 +1187,7 @@
     ]}
   ];
 
-  const DEFAULT_PACKAGES = [
+  var DEFAULT_PACKAGES = [
     { id:"pack-iniciante", icon:"🌱", name:"Pack Iniciante", desc:"Para começar a evoluir com tudo.", featured:false,
       items:[{name:"500 Maestria", qty:1},{name:"1.000 Níveis", qty:1},{name:"10k Fragmentos", qty:1},{name:"100 Desvios", qty:1}],
       total:26.00, value:32.50 },
@@ -1187,19 +1208,19 @@
       total:390.00, value:490.00 }
   ];
 
-  const DEFAULT_EVENTS = [
+  var DEFAULT_EVENTS = [
     { id:"ev1", title:"Sorteio de upagem grátis", desc:"Todo pedido acima de R$ 50 concorre a uma upagem grátis no valor de até R$ 30. Sorteio no grupo do WhatsApp.", date:"2026-08-22", status:"acontecer" },
     { id:"ev2", title:"Semana do Leviatã", desc:"20% de desconto em todos os serviços de Leviatã durante a semana inteira.", date:"2026-08-15", status:"ativo" },
     { id:"ev3", title:"Dia do Nível Máximo", desc:"Preço especial no pack Nível Máximo + 1.000 fragmentos de brinde.", date:"2026-08-30", status:"acontecer" }
   ];
 
-  const DEFAULT_REVIEWS = [
+  var DEFAULT_REVIEWS = [
     { id:"r1", name:"Kaito_br", rating:5, text:"Serviço rápido e de confiança. Upou minha maestria em 1 dia, recomendo demais!", date:Date.now()-86400000*6 },
     { id:"r2", name:"FrutasLord", rating:5, text:"Comprei o pack Lendário e o uper foi super atencioso. Pagamento via PIX sem dor de cabeça.", date:Date.now()-86400000*3 },
     { id:"r3", name:"MarujoX", rating:4, text:"Muito bom! Só demorou um pouco por causa da atualização do Roblox, mas eles avisaram certinho.", date:Date.now()-86400000 }
   ];
 
-  const STATUS_MAP = {
+  var STATUS_MAP = {
     green:  { dot:'green',  emoji:'🟢', label:'Working', color:'var(--ok)' },
     orange: { dot:'orange', emoji:'🟠', label:'Updating', color:'var(--warn)' },
     red:    { dot:'red',    emoji:'🔴', label:'Down',     color:'var(--danger)' }
@@ -1208,84 +1229,230 @@
   /* ============================================================
      ESTADO
      ============================================================ */
-  let settings = { config:{...DEFAULT_CONFIG}, prices:JSON.parse(JSON.stringify(DEFAULT_PRICES)), packages:JSON.parse(JSON.stringify(DEFAULT_PACKAGES)), events:JSON.parse(JSON.stringify(DEFAULT_EVENTS)), admin:{ salt:null, hash:null } };
-  let users = [];
-  let orders = [];
-  let reviews = JSON.parse(JSON.stringify(DEFAULT_REVIEWS));
-  let chat = [];
-  let contacts = [];
-  let currentUser = null;
-  let isAdmin = false;
-  let activeSimCat = null;
-  let activePriceCat = null;
-  let cart = []; // {catId, catLabel, name, price, qty, icon}
-  let lastChatLen = 0;
-
-  /* ============================================================
-     PERSISTÊNCIA
-     ============================================================ */
-  async function loadAll(){
-    settings = await dbGet('shop.settings', settings);
-    if(!settings.prices || settings.prices.length===0) settings.prices = JSON.parse(JSON.stringify(DEFAULT_PRICES));
-    if(!settings.packages || settings.packages.length===0) settings.packages = JSON.parse(JSON.stringify(DEFAULT_PACKAGES));
-    if(!settings.events || settings.events.length===0) settings.events = JSON.parse(JSON.stringify(DEFAULT_EVENTS));
-    if(!settings.config) settings.config = {...DEFAULT_CONFIG};
-    if(!settings.admin) settings.admin = { salt:null, hash:null };
-    users = await dbGet('shop.users', []);
-    orders = await dbGet('shop.orders', []);
-    reviews = await dbGet('shop.reviews', DEFAULT_REVIEWS);
-    chat = await dbGet('shop.chat', []);
-    contacts = await dbGet('shop.contacts', []);
-    if(!settings.admin.hash){ settings.admin.salt = randomHex(8); settings.admin.hash = await hashPass(DEFAULT_ADMIN_PASS, settings.admin.salt); await saveSettings(); }
-  }
-  async function saveSettings(){ return dbSet('shop.settings', settings); }
-  async function saveUsers(){ return dbSet('shop.users', users); }
-  async function saveOrders(){ return dbSet('shop.orders', orders); }
-  async function saveReviews(){ return dbSet('shop.reviews', reviews); }
-  async function saveChat(){ return dbSet('shop.chat', chat); }
-  async function saveContacts(){ return dbSet('shop.contacts', contacts); }
+  var settings = { config:Object.assign({}, DEFAULT_CONFIG), prices:JSON.parse(JSON.stringify(DEFAULT_PRICES)), packages:JSON.parse(JSON.stringify(DEFAULT_PACKAGES)), events:JSON.parse(JSON.stringify(DEFAULT_EVENTS)), admin:{ salt:null, hash:null } };
+  var users = [];
+  var orders = [];
+  var reviews = JSON.parse(JSON.stringify(DEFAULT_REVIEWS));
+  var chat = [];
+  var contacts = [];
+  var ranking = [];
+  var currentUser = null;
+  var isAdmin = false;
+  var activeSimCat = null;
+  var activePriceCat = null;
+  var cart = [];
+  var lastChatLen = 0;
+  var chatChannel = null;
 
   /* ============================================================
      UTIL
      ============================================================ */
   function formatBRL(n){ return "R$ " + Number(n||0).toFixed(2).replace('.', ','); }
   function genId(prefix){ return prefix + '-' + Date.now().toString(36).toUpperCase() + Math.floor(Math.random()*90+10); }
-  function escapeHtml(s){ const d=document.createElement('div'); d.textContent = (s===null||s===undefined) ? '' : String(s); return d.innerHTML; }
-  function formatDate(ts){ const d=new Date(ts); return d.toLocaleDateString('pt-BR') + ' ' + d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}); }
-  function formatDateShort(ts){ const d=new Date(ts); return d.toLocaleDateString('pt-BR'); }
-  function randomHex(n){ const a=new Uint8Array(n); crypto.getRandomValues(a); return Array.from(a).map(b=>b.toString(16).padStart(2,'0')).join(''); }
+  function escapeHtml(s){ var d=document.createElement('div'); d.textContent = (s===null||s===undefined) ? '' : String(s); return d.innerHTML; }
+  function formatDate(ts){ var d=new Date(ts); return d.toLocaleDateString('pt-BR') + ' ' + d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}); }
+  function formatDateShort(ts){ var d=new Date(ts); return d.toLocaleDateString('pt-BR'); }
+  function randomHex(n){ var a=new Uint8Array(n); crypto.getRandomValues(a); return Array.from(a).map(function(b){return b.toString(16).padStart(2,'0');}).join(''); }
   async function sha256(text){
-    const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
-    return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+    var buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
+    return Array.from(new Uint8Array(buf)).map(function(b){return b.toString(16).padStart(2,'0');}).join('');
   }
   function hashPass(pass, salt){ return sha256(salt + '::' + pass); }
   function $(id){ return document.getElementById(id); }
   function showToast(msg, ok){
-    const t = $('toast');
+    var t = $('toast');
     t.textContent = msg;
     t.style.borderColor = ok ? 'var(--ok)' : 'var(--teal)';
     t.classList.add('show');
     clearTimeout(t.__timer);
-    t.__timer = setTimeout(()=> t.classList.remove('show'), 3200);
+    t.__timer = setTimeout(function(){ t.classList.remove('show'); }, 3200);
   }
 
   /* ============================================================
-     AUTH — SESSÃO
+     PERSISTÊNCIA — SUPABASE
+     ============================================================ */
+  function sbConfigData(){
+    return { config: settings.config, prices: settings.prices, packages: settings.packages, events: settings.events, admin: settings.admin };
+  }
+  async function loadConfigSupabase(){
+    try{
+      var res = await sb.from('site_config').select('data').eq('id', 1).maybeSingle();
+      if(res.error) return false;
+      if(res.data && res.data.data){
+        var d = res.data.data;
+        settings = {
+          config: Object.assign({}, DEFAULT_CONFIG, d.config||{}),
+          prices: (d.prices && d.prices.length) ? d.prices : JSON.parse(JSON.stringify(DEFAULT_PRICES)),
+          packages: (d.packages && d.packages.length) ? d.packages : JSON.parse(JSON.stringify(DEFAULT_PACKAGES)),
+          events: (d.events && d.events.length) ? d.events : JSON.parse(JSON.stringify(DEFAULT_EVENTS)),
+          admin: d.admin || { salt: null, hash: null }
+        };
+      }
+      if(!settings.admin.hash){
+        settings.admin = Object.assign({}, SEED_ADMIN);
+        await sb.from('site_config').upsert({ id:1, data: sbConfigData() });
+      }
+      return true;
+    }catch(e){ return false; }
+  }
+  async function saveSettingsSupabase(){
+    var res = await sb.from('site_config').update({ data: sbConfigData() }).eq('id', 1);
+    if(res.error){ showToast('Erro ao salvar configurações.'); return false; }
+    return true;
+  }
+  async function loadOrdersSupabase(){
+    if(!currentUser){ orders = []; return; }
+    var q = sb.from('orders').select('*').order('created_at',{ascending:false}).limit(300);
+    if(!isAdmin) q = q.eq('user_id', currentUser.id);
+    var res = await q;
+    orders = (res.data||[]).map(function(o){
+      return { id:o.id, userId:o.user_id, userName:o.username, timestamp:new Date(o.created_at).getTime(), items:o.items||[], total:Number(o.total)||0, status:o.status||'aguardando' };
+    });
+  }
+  async function createOrderSupabase(order){
+    var res = await sb.from('orders').insert({ id: order.id, user_id: currentUser.id, username: currentUser.name, items: order.items, total: order.total, status: 'aguardando' });
+    return !res.error;
+  }
+  async function updateOrderStatusSupabase(id, status){
+    var res = await sb.from('orders').update({ status: status }).eq('id', id);
+    return !res.error;
+  }
+  async function deleteOrderSupabase(id){
+    var res = await sb.from('orders').delete().eq('id', id);
+    return !res.error;
+  }
+  async function loadUsersSupabase(){
+    var res = await sb.from('profiles').select('id,username,is_admin,created_at').order('created_at',{ascending:false}).limit(300);
+    users = (res.data||[]).map(function(p){
+      return { id:p.id, name:p.username, isAdmin:!!p.is_admin, createdAt:new Date(p.created_at).getTime() };
+    });
+  }
+  async function loadChatSupabase(){
+    var res = await sb.from('chat_messages').select('*').order('created_at',{ascending:true}).limit(300);
+    chat = (res.data||[]).map(function(m){
+      return { id:m.id, userId:m.user_id, name:m.username, text:m.text, ts:new Date(m.created_at).getTime(), kind:m.kind||'user' };
+    });
+    lastChatLen = chat.length;
+  }
+  async function addChatMsgSupabase(text, kind){
+    if(!currentUser) return;
+    var res = await sb.from('chat_messages').insert({ user_id: currentUser.id, username: currentUser.name, text:text, kind:kind||'user' }).select();
+    if(res.error){ showToast('Erro ao enviar: ' + res.error.message); return; }
+    var m = res.data && res.data[0];
+    if(m && !chat.some(function(x){return x.id===m.id;})){
+      chat.push({ id:m.id, userId:m.user_id, name:m.username, text:m.text, ts:new Date(m.created_at).getTime(), kind:m.kind||'user' });
+      if(chat.length>300) chat = chat.slice(-300);
+      renderChat();
+    }
+  }
+  function subscribeChatRealtime(){
+    try{
+      chatChannel = sb.channel('public:chat_messages')
+        .on('postgres_changes', { event:'INSERT', schema:'public', table:'chat_messages' }, function(payload){
+          var m = payload.new;
+          if(m && !chat.some(function(x){return x.id===m.id;})){
+            chat.push({ id:m.id, userId:m.user_id, name:m.username, text:m.text, ts:new Date(m.created_at).getTime(), kind:m.kind||'user' });
+            if(chat.length>300) chat = chat.slice(-300);
+            renderChat();
+          }
+        })
+        .subscribe();
+    }catch(e){}
+  }
+  async function loadReviewsSupabase(){
+    var res = await sb.from('reviews').select('*').order('created_at',{ascending:false}).limit(100);
+    reviews = (res.data||[]).map(function(r){
+      return { id:r.id, name:r.username, rating:r.rating, text:r.text, date:new Date(r.created_at).getTime() };
+    });
+  }
+  async function addReviewSupabase(review){
+    var res = await sb.from('reviews').insert({ user_id: currentUser.id, username: currentUser.name, rating: review.rating, text: review.text }).select();
+    if(res.error){ showToast('Erro ao enviar avaliação.'); return null; }
+    var r = res.data && res.data[0];
+    if(r) return { id:r.id, name:r.username, rating:r.rating, text:r.text, date:new Date(r.created_at).getTime() };
+    return null;
+  }
+  async function deleteReviewSupabase(id){
+    var res = await sb.from('reviews').delete().eq('id', id);
+    return !res.error;
+  }
+  async function loadContactsSupabase(){
+    var res = await sb.from('contacts').select('*').order('created_at',{ascending:false}).limit(200);
+    contacts = (res.data||[]).map(function(m){
+      return { id:m.id, name:m.name, handle:m.handle, subject:m.subject, message:m.message, timestamp:new Date(m.created_at).getTime() };
+    });
+  }
+  async function addContactSupabase(c){
+    var res = await sb.from('contacts').insert({ name:c.name, handle:c.handle, subject:c.subject, message:c.message });
+    return !res.error;
+  }
+  async function deleteContactSupabase(id){
+    var res = await sb.from('contacts').delete().eq('id', id);
+    return !res.error;
+  }
+  async function loadRankingSupabase(){
+    var res = await sb.rpc('get_ranking');
+    ranking = (res.data||[]).map(function(r){ return { name:r.username, totalSpent:Number(r.total)||0, ordersCount:Number(r.cnt)||0 }; });
+  }
+  async function promoteAdminSupabase(){
+    var res = await sb.rpc('promote_admin');
+    return !res.error;
+  }
+
+  /* ============================================================
+     AUTH — SUPABASE
+     ============================================================ */
+  function sbEmailFor(name){ return name.trim().toLowerCase().replace(/[^a-z0-9_\-]/g,'') + '@kyo.store'; }
+  async function registerSupabase(name, pass){
+    var res = await sb.auth.signUp({ email: sbEmailFor(name), password: pass, options: { data: { username: name } } });
+    if(res.error){
+      var msg = res.error.message || 'Erro ao criar conta.';
+      if(/already|exists|registered/i.test(msg)) throw new Error('Este nome de usuário já existe.');
+      throw new Error(msg);
+    }
+    if(!res.data.session){
+      throw new Error('Conta criada! Para login imediato, desative a opção "Confirm email" no Supabase (Authentication > Providers > Email) e tente novamente.');
+    }
+    currentUser = { id: res.data.user.id, name: name };
+  }
+  async function loginSupabase(name, pass){
+    var res = await sb.auth.signInWithPassword({ email: sbEmailFor(name), password: pass });
+    if(res.error) throw new Error('Conta não encontrada ou senha incorreta.');
+    currentUser = { id: res.data.user.id, name: name };
+    var prof = await sb.from('profiles').select('is_admin').eq('id', currentUser.id).maybeSingle();
+    if(!prof.error && prof.data && prof.data.is_admin) isAdmin = true;
+  }
+  async function logoutSupabase(){
+    await sb.auth.signOut();
+    currentUser = null;
+    if(USE_SUPABASE) isAdmin = false;
+  }
+  async function restoreSessionSupabase(){
+    var res = await sb.auth.getSession();
+    if(res.error || !res.data.session) return;
+    var u = res.data.session.user;
+    currentUser = { id: u.id, name: (u.user_metadata && u.user_metadata.username) ? u.user_metadata.username : u.email.split('@')[0] };
+    var prof = await sb.from('profiles').select('is_admin').eq('id', currentUser.id).maybeSingle();
+    if(!prof.error && prof.data && prof.data.is_admin) isAdmin = true;
+  }
+
+  /* ============================================================
+     AUTH — LOCAL (fallback)
      ============================================================ */
   function saveSession(){
     if(currentUser){ localStorage.setItem('kyo_session', JSON.stringify({uid:currentUser.id, token:currentUser.token})); }
     else { localStorage.removeItem('kyo_session'); }
   }
-  async function restoreSession(){
+  async function restoreSessionLocal(){
     try{
-      const s = JSON.parse(localStorage.getItem('kyo_session'));
+      var s = JSON.parse(localStorage.getItem('kyo_session'));
       if(!s) return;
-      const u = users.find(x=>x.id===s.uid && x.token===s.token);
+      var u = users.find(function(x){ return x.id===s.uid && x.token===s.token; });
       if(u) currentUser = u;
     }catch(e){}
   }
   function updateAccountUI(){
-    const btn = $('accountBtn');
+    var btn = $('accountBtn');
     if(currentUser){
       $('accountAvatar').textContent = (currentUser.name||'?').charAt(0).toUpperCase();
       $('accountLabel').textContent = currentUser.name;
@@ -1297,14 +1464,58 @@
   }
 
   /* ============================================================
+     PERSISTÊNCIA — LOCAL
+     ============================================================ */
+  async function saveSettingsLocal(){
+    try{ await store.set('shop.settings', JSON.stringify(settings), true); return true; }
+    catch(e){ showToast('Erro ao salvar. Tente novamente.'); return false; }
+  }
+  async function saveUsersLocal(){ try{ await store.set('shop.users', JSON.stringify(users), true); return true; }catch(e){ return false; } }
+  async function saveOrdersLocal(){ try{ await store.set('shop.orders', JSON.stringify(orders), true); return true; }catch(e){ return false; } }
+  async function saveReviewsLocal(){ try{ await store.set('shop.reviews', JSON.stringify(reviews), true); return true; }catch(e){ return false; } }
+  async function saveChatLocal(){ try{ await store.set('shop.chat', JSON.stringify(chat), true); return true; }catch(e){ return false; } }
+  async function saveContactsLocal(){ try{ await store.set('shop.contacts', JSON.stringify(contacts), true); return true; }catch(e){ return false; } }
+
+  function saveSettings(){ return USE_SUPABASE ? saveSettingsSupabase() : saveSettingsLocal(); }
+
+  /* ============================================================
+     LOAD ALL
+     ============================================================ */
+  async function loadAll(){
+    if(USE_SUPABASE){
+      await loadConfigSupabase();
+      await Promise.all([loadChatSupabase(), loadReviewsSupabase()]);
+      await restoreSessionSupabase();
+      if(currentUser){ await loadOrdersSupabase(); }
+      if(isAdmin){ await loadUsersSupabase(); await loadContactsSupabase(); }
+    } else {
+      settings = await dbGet('shop.settings', settings);
+      if(!settings.prices || settings.prices.length===0) settings.prices = JSON.parse(JSON.stringify(DEFAULT_PRICES));
+      if(!settings.packages || settings.packages.length===0) settings.packages = JSON.parse(JSON.stringify(DEFAULT_PACKAGES));
+      if(!settings.events || settings.events.length===0) settings.events = JSON.parse(JSON.stringify(DEFAULT_EVENTS));
+      if(!settings.config) settings.config = Object.assign({}, DEFAULT_CONFIG);
+      if(!settings.admin) settings.admin = { salt:null, hash:null };
+      users = await dbGet('shop.users', []);
+      orders = await dbGet('shop.orders', []);
+      reviews = await dbGet('shop.reviews', DEFAULT_REVIEWS);
+      chat = await dbGet('shop.chat', []);
+      contacts = await dbGet('shop.contacts', []);
+      if(!settings.admin.hash){ settings.admin.salt = randomHex(8); settings.admin.hash = await hashPass(DEFAULT_ADMIN_PASS, settings.admin.salt); await saveSettingsLocal(); }
+      await restoreSessionLocal();
+    }
+  }
+
+  /* ============================================================
      RENDER — SHELL / STATUS
      ============================================================ */
   function renderShell(){
     $('brandName').textContent = settings.config.shopName;
     $('brandNameFooter').textContent = settings.config.shopName;
-    $('heroTitle').innerHTML = escapeHtml(settings.config.shopName).replace(/(Frutas)$/i, '<span class="grad-text">Frutas</span>');
+    var name = settings.config.shopName;
+    $('heroTitle').innerHTML = escapeHtml(name) + (/(Frutas)$/i.test(name) ? '' : '') ;
+    if(/(Frutas)$/i.test(name)) $('heroTitle').innerHTML = escapeHtml(name).replace(/Frutas$/i, '<span class="grad-text">Frutas</span>');
     $('heroTagline').textContent = settings.config.tagline;
-    const st = STATUS_MAP[settings.config.status] || STATUS_MAP.green;
+    var st = STATUS_MAP[settings.config.status] || STATUS_MAP.green;
     $('statusDot').className = 'status-dot ' + st.dot;
     $('statusText').textContent = st.emoji + ' ' + st.label;
     $('beaconCore').textContent = st.emoji;
@@ -1312,51 +1523,48 @@
     document.querySelector('.beacon').style.setProperty('--beacon-color', st.color);
     $('beaconLabel').textContent = st.label;
     $('yearNow').textContent = new Date().getFullYear();
-    const w = settings.config.whats || WHATS_DEFAULT;
-    [$('whatsTop'), $('heroWhatsBtn'), $('footWhats'), $('pixWhatsBtn')].forEach(el=>{ if(el) el.href = w; });
+    var w = settings.config.whats || WHATS_DEFAULT;
+    [$('whatsTop'), $('heroWhatsBtn'), $('footWhats'), $('pixWhatsBtn')].forEach(function(el){ if(el) el.href = w; });
+    var badge = $('dbBadge');
+    if(USE_SUPABASE){ badge.textContent = '• banco online'; badge.className = 'db-badge on'; }
+    else { badge.textContent = '• modo local'; badge.className = 'db-badge off'; }
   }
 
   /* ============================================================
      SIMULADOR
      ============================================================ */
   function renderSimChips(){
-    const row = $('simChips');
+    var row = $('simChips');
     row.innerHTML = '';
-    settings.prices.forEach(cat=>{
-      const chip = document.createElement('button');
+    settings.prices.forEach(function(cat){
+      var chip = document.createElement('button');
       chip.className = 'chip' + (cat.id===activeSimCat ? ' active' : '');
-      chip.innerHTML = `<span>${cat.icon}</span><span>${escapeHtml(cat.label)}</span>`;
-      chip.addEventListener('click', ()=>{ activeSimCat = cat.id; renderSimChips(); renderSimItems(); });
+      chip.innerHTML = '<span>' + cat.icon + '</span><span>' + escapeHtml(cat.label) + '</span>';
+      chip.addEventListener('click', function(){ activeSimCat = cat.id; renderSimChips(); renderSimItems(); });
       row.appendChild(chip);
     });
   }
   function renderSimItems(){
-    const cat = settings.prices.find(c=>c.id===activeSimCat) || settings.prices[0];
+    var cat = settings.prices.find(function(c){ return c.id===activeSimCat; }) || settings.prices[0];
     if(!cat) return;
     $('simTitle').textContent = cat.icon + '  ' + cat.label;
     $('simCount').textContent = cat.items.length + ' serviços';
-    const body = $('simItems');
-    body.innerHTML = cat.items.map(it=>{
-      const inCart = cart.find(c=>c.catId===cat.id && c.name===it.name);
-      const qty = inCart ? inCart.qty : 0;
-      return `
-        <div class="sim-item">
-          <div>
-            <div class="nm">${escapeHtml(it.name)}</div>
-            <div class="pr">${formatBRL(it.price)} cada</div>
-          </div>
-          ${qty>0 ? `
-            <div class="qty-ctrl">
-              <button data-qact="dec" data-cat="${escapeHtml(cat.id)}" data-name="${escapeHtml(it.name)}" data-price="${it.price}">−</button>
-              <span class="qty">${qty}</span>
-              <button data-qact="inc" data-cat="${escapeHtml(cat.id)}" data-name="${escapeHtml(it.name)}" data-price="${it.price}">+</button>
-            </div>` : `
-            <button class="add-item-btn" data-qact="inc" data-cat="${escapeHtml(cat.id)}" data-name="${escapeHtml(it.name)}" data-price="${it.price}">+ Adicionar</button>`}
-        </div>`;
+    var body = $('simItems');
+    body.innerHTML = cat.items.map(function(it){
+      var inCart = cart.find(function(c){ return c.catId===cat.id && c.name===it.name; });
+      var qty = inCart ? inCart.qty : 0;
+      if(qty>0){
+        return '<div class="sim-item"><div><div class="nm">' + escapeHtml(it.name) + '</div><div class="pr">' + formatBRL(it.price) + ' cada</div></div>' +
+          '<div class="qty-ctrl"><button data-qact="dec" data-cat="' + escapeHtml(cat.id) + '" data-name="' + escapeHtml(it.name) + '" data-price="' + it.price + '">−</button>' +
+          '<span class="qty">' + qty + '</span>' +
+          '<button data-qact="inc" data-cat="' + escapeHtml(cat.id) + '" data-name="' + escapeHtml(it.name) + '" data-price="' + it.price + '">+</button></div></div>';
+      }
+      return '<div class="sim-item"><div><div class="nm">' + escapeHtml(it.name) + '</div><div class="pr">' + formatBRL(it.price) + ' cada</div></div>' +
+        '<button class="add-item-btn" data-qact="inc" data-cat="' + escapeHtml(cat.id) + '" data-name="' + escapeHtml(it.name) + '" data-price="' + it.price + '">+ Adicionar</button></div>';
     }).join('');
-    body.querySelectorAll('[data-qact]').forEach(btn=>{
-      btn.addEventListener('click', ()=>{
-        const catId = btn.dataset.cat, name = btn.dataset.name, price = parseFloat(btn.dataset.price);
+    body.querySelectorAll('[data-qact]').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        var catId = btn.dataset.cat, name = btn.dataset.name, price = parseFloat(btn.dataset.price);
         if(btn.dataset.qact === 'inc') addToCart(catId, name, price);
         else removeFromCart(catId, name);
         renderSimItems(); renderCart(); renderPriceTable();
@@ -1365,71 +1573,65 @@
   }
   function addToCart(catId, name, price, qty){
     qty = qty || 1;
-    const cat = settings.prices.find(c=>c.id===catId);
-    const found = cart.find(c=>c.catId===catId && c.name===name);
+    var cat = settings.prices.find(function(c){ return c.id===catId; });
+    var found = cart.find(function(c){ return c.catId===catId && c.name===name; });
     if(found) found.qty += qty;
-    else cart.push({ catId, catLabel: cat ? cat.label : catId, icon: cat ? cat.icon : '📦', name, price, qty });
+    else cart.push({ catId:catId, catLabel: cat ? cat.label : catId, icon: cat ? cat.icon : '📦', name:name, price:price, qty:qty });
     renderCartBadge();
   }
   function removeFromCart(catId, name){
-    const found = cart.find(c=>c.catId===catId && c.name===name);
+    var found = cart.find(function(c){ return c.catId===catId && c.name===name; });
     if(found){
       found.qty--;
-      if(found.qty<=0) cart = cart.filter(c=>!(c.catId===catId && c.name===name));
+      if(found.qty<=0) cart = cart.filter(function(c){ return !(c.catId===catId && c.name===name); });
     }
     renderCartBadge();
   }
-  function cartTotal(){ return cart.reduce((s,c)=> s + c.price*c.qty, 0); }
+  function cartTotal(){ return cart.reduce(function(s,c){ return s + c.price*c.qty; }, 0); }
   function renderCartBadge(){
-    const n = cart.reduce((s,c)=> s+c.qty, 0);
-    const b = $('cartBadge');
+    var n = cart.reduce(function(s,c){ return s+c.qty; }, 0);
+    var b = $('cartBadge');
     b.textContent = n;
     b.classList.toggle('hidden', n===0);
   }
   function renderCart(){
-    $('cartCount').textContent = cart.reduce((s,c)=>s+c.qty,0) + ' itens';
-    const body = $('cartBody');
+    $('cartCount').textContent = cart.reduce(function(s,c){return s+c.qty;},0) + ' itens';
+    var body = $('cartBody');
     if(cart.length===0){
       body.innerHTML = '<div class="cart-empty">Seu carrinho está vazio.<br>Adicione serviços no simulador.</div>';
       return;
     }
-    body.innerHTML = cart.map(c=>`
-      <div class="cart-row">
-        <div class="ci"><b>${c.icon} ${escapeHtml(c.name)}</b><small>${escapeHtml(c.catLabel)} · ${c.qty}× ${formatBRL(c.price)}</small></div>
-        <span class="cprice">${formatBRL(c.price*c.qty)}</span>
-        <button class="cdel" data-del-cat="${escapeHtml(c.catId)}" data-del-name="${escapeHtml(c.name)}" title="Remover">✕</button>
-      </div>`).join('') + `
-      <div class="cart-total">
-        <span class="lbl">Valor final</span>
-        <span class="val">${formatBRL(cartTotal())}</span>
-      </div>
-      <button class="btn btn-teal btn-block" id="checkoutOpenBtn">Finalizar pedido</button>`;
-    body.querySelectorAll('[data-del-cat]').forEach(b=>{
-      b.addEventListener('click', ()=>{
-        cart = cart.filter(c=>!(c.catId===b.dataset.delCat && c.name===b.dataset.delName));
+    body.innerHTML = cart.map(function(c){
+      return '<div class="cart-row"><div class="ci"><b>' + c.icon + ' ' + escapeHtml(c.name) + '</b><small>' + escapeHtml(c.catLabel) + ' · ' + c.qty + '× ' + formatBRL(c.price) + '</small></div>' +
+        '<span class="cprice">' + formatBRL(c.price*c.qty) + '</span>' +
+        '<button class="cdel" data-del-cat="' + escapeHtml(c.catId) + '" data-del-name="' + escapeHtml(c.name) + '" title="Remover">✕</button></div>';
+    }).join('') +
+      '<div class="cart-total"><span class="lbl">Valor final</span><span class="val">' + formatBRL(cartTotal()) + '</span></div>' +
+      '<button class="btn btn-teal btn-block" id="checkoutOpenBtn">Finalizar pedido</button>';
+    body.querySelectorAll('[data-del-cat]').forEach(function(b){
+      b.addEventListener('click', function(){
+        cart = cart.filter(function(c){ return !(c.catId===b.dataset.delCat && c.name===b.dataset.delName); });
         renderCart(); renderSimItems(); renderPriceTable();
       });
     });
-    const go = $('checkoutOpenBtn');
+    var go = $('checkoutOpenBtn');
     if(go) go.addEventListener('click', openCheckoutModal);
   }
   function renderPriceTable(){
-    const cat = settings.prices.find(c=>c.id===activePriceCat) || settings.prices[0];
+    var cat = settings.prices.find(function(c){ return c.id===activePriceCat; }) || settings.prices[0];
     if(!cat) return;
     $('ledgerTitle').textContent = cat.icon + '  ' + cat.label;
     $('ledgerCount').textContent = cat.items.length + ' itens';
-    $('ledgerBody').innerHTML = cat.items.map(it=>{
-      const inCart = cart.find(c=>c.catId===cat.id && c.name===it.name);
-      const qty = inCart ? inCart.qty : 0;
-      return `<tr>
-        <td class="item-name">${escapeHtml(it.name)}</td>
-        <td class="item-price">${qty>0 ? '×'+qty+' · ' : ''}${formatBRL(it.price)}</td>
-        <td><button class="price-add" title="Adicionar ao carrinho" data-pa-cat="${escapeHtml(cat.id)}" data-pa-name="${escapeHtml(it.name)}" data-pa-price="${it.price}">${qty>0 ? '✓' : '+'}</button></td>
-      </tr>`;
+    $('ledgerBody').innerHTML = cat.items.map(function(it){
+      var inCart = cart.find(function(c){ return c.catId===cat.id && c.name===it.name; });
+      var qty = inCart ? inCart.qty : 0;
+      return '<tr><td class="item-name">' + escapeHtml(it.name) + '</td>' +
+        '<td class="item-price">' + (qty>0 ? '×'+qty+' · ' : '') + formatBRL(it.price) + '</td>' +
+        '<td><button class="price-add" title="Adicionar ao carrinho" data-pa-cat="' + escapeHtml(cat.id) + '" data-pa-name="' + escapeHtml(it.name) + '" data-pa-price="' + it.price + '">' + (qty>0 ? '✓' : '+') + '</button></td></tr>';
     }).join('');
-    $('ledgerBody').querySelectorAll('[data-pa-cat]').forEach(b=>{
-      b.addEventListener('click', ()=>{
-        const catId = b.dataset.paCat, name = b.dataset.paName, price = parseFloat(b.dataset.paPrice);
+    $('ledgerBody').querySelectorAll('[data-pa-cat]').forEach(function(b){
+      b.addEventListener('click', function(){
+        var catId = b.dataset.paCat, name = b.dataset.paName, price = parseFloat(b.dataset.paPrice);
         if(b.textContent === '✓') removeFromCart(catId, name);
         else addToCart(catId, name, price);
         renderPriceTable(); renderSimItems(); renderCart();
@@ -1438,13 +1640,13 @@
     });
   }
   function renderPriceChips(){
-    const row = $('priceChips');
+    var row = $('priceChips');
     row.innerHTML = '';
-    settings.prices.forEach(cat=>{
-      const chip = document.createElement('button');
+    settings.prices.forEach(function(cat){
+      var chip = document.createElement('button');
       chip.className = 'chip' + (cat.id===activePriceCat ? ' active' : '');
-      chip.innerHTML = `<span>${cat.icon}</span><span>${escapeHtml(cat.label)}</span>`;
-      chip.addEventListener('click', ()=>{ activePriceCat = cat.id; renderPriceChips(); renderPriceTable(); });
+      chip.innerHTML = '<span>' + cat.icon + '</span><span>' + escapeHtml(cat.label) + '</span>';
+      chip.addEventListener('click', function(){ activePriceCat = cat.id; renderPriceChips(); renderPriceTable(); });
       row.appendChild(chip);
     });
   }
@@ -1453,27 +1655,24 @@
      PACOTES
      ============================================================ */
   function renderPackages(){
-    const grid = $('packGrid');
-    grid.innerHTML = settings.packages.map(p=>`
-      <div class="pack-card${p.featured?' featured':''}">
-        ${p.featured ? '<span class="pack-tag">Popular</span>' : ''}
-        <div class="pack-icon">${p.icon}</div>
-        <h4>${escapeHtml(p.name)}</h4>
-        <p class="pack-desc">${escapeHtml(p.desc||'')}</p>
-        <ul>${(p.items||[]).map(i=>`<li>${escapeHtml(i.name)}${i.qty>1 ? ' <b style="color:var(--gold);">×'+i.qty+'</b>' : ''}</li>`).join('')}</ul>
-        <div class="pack-price">
-          <span class="now">${formatBRL(p.total)}</span>
-          ${p.value ? `<span class="was">${formatBRL(p.value)}</span>` : ''}
-        </div>
-        <button class="btn btn-primary btn-sm" style="width:100%; margin-top:12px;" data-pack-add="${escapeHtml(p.id)}">Adicionar ao carrinho</button>
-      </div>`).join('');
-    grid.querySelectorAll('[data-pack-add]').forEach(btn=>{
-      btn.addEventListener('click', ()=>{
-        const p = settings.packages.find(x=>x.id===btn.dataset.packAdd);
+    var grid = $('packGrid');
+    grid.innerHTML = settings.packages.map(function(p){
+      return '<div class="pack-card' + (p.featured?' featured':'') + '">' +
+        (p.featured ? '<span class="pack-tag">Popular</span>' : '') +
+        '<div class="pack-icon">' + p.icon + '</div>' +
+        '<h4>' + escapeHtml(p.name) + '</h4>' +
+        '<p class="pack-desc">' + escapeHtml(p.desc||'') + '</p>' +
+        '<ul>' + (p.items||[]).map(function(i){ return '<li>' + escapeHtml(i.name) + (i.qty>1 ? ' <b style="color:var(--gold);">×'+i.qty+'</b>' : '') + '</li>'; }).join('') + '</ul>' +
+        '<div class="pack-price"><span class="now">' + formatBRL(p.total) + '</span>' + (p.value ? '<span class="was">' + formatBRL(p.value) + '</span>' : '') + '</div>' +
+        '<button class="btn btn-primary btn-sm" style="width:100%; margin-top:12px;" data-pack-add="' + escapeHtml(p.id) + '">Adicionar ao carrinho</button></div>';
+    }).join('');
+    grid.querySelectorAll('[data-pack-add]').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        var p = settings.packages.find(function(x){ return x.id===btn.dataset.packAdd; });
         if(!p) return;
-        (p.items||[]).forEach(i=>{
-          const cat = settings.prices.find(c=>c.items.some(it=>it.name===i.name));
-          if(cat){ const it = cat.items.find(it=>it.name===i.name); addToCart(cat.id, i.name, it.price, i.qty||1); }
+        (p.items||[]).forEach(function(i){
+          var cat = settings.prices.find(function(c){ return c.items.some(function(it){ return it.name===i.name; }); });
+          if(cat){ var it = cat.items.find(function(x){ return x.name===i.name; }); addToCart(cat.id, i.name, it.price, i.qty||1); }
         });
         renderCart(); renderSimItems(); renderPriceTable();
         showToast('Pacote "' + p.name + '" adicionado ao carrinho!', true);
@@ -1486,89 +1685,96 @@
      ============================================================ */
   function openCheckoutModal(){
     if(cart.length===0){ showToast('Seu carrinho está vazio.'); return; }
-    $('checkoutItems').innerHTML = cart.map(c=>`
-      <div class="cart-row">
-        <div class="ci"><b>${c.icon} ${escapeHtml(c.name)}</b><small>${escapeHtml(c.catLabel)} · ${c.qty}× ${formatBRL(c.price)}</small></div>
-        <span class="cprice">${formatBRL(c.price*c.qty)}</span>
-      </div>`).join('');
+    $('checkoutItems').innerHTML = cart.map(function(c){
+      return '<div class="cart-row"><div class="ci"><b>' + c.icon + ' ' + escapeHtml(c.name) + '</b><small>' + escapeHtml(c.catLabel) + ' · ' + c.qty + '× ' + formatBRL(c.price) + '</small></div>' +
+        '<span class="cprice">' + formatBRL(c.price*c.qty) + '</span></div>';
+    }).join('');
     $('checkoutTotal').textContent = formatBRL(cartTotal());
     $('checkoutNotLogged').style.display = currentUser ? 'none' : 'block';
     $('checkoutOverlay').classList.add('open');
   }
   function closeCheckoutModal(){ $('checkoutOverlay').classList.remove('open'); }
   $('checkoutClose').addEventListener('click', closeCheckoutModal);
-  $('checkoutOverlay').addEventListener('click', e=>{ if(e.target.id==='checkoutOverlay') closeCheckoutModal(); });
-  $('checkoutConfirmBtn').addEventListener('click', async ()=>{
+  $('checkoutOverlay').addEventListener('click', function(e){ if(e.target.id==='checkoutOverlay') closeCheckoutModal(); });
+  $('checkoutConfirmBtn').addEventListener('click', async function(){
     if(!currentUser){ showToast('Entre na sua conta para finalizar.'); closeCheckoutModal(); openAccountModal(); return; }
     if(cart.length===0){ showToast('Seu carrinho está vazio.'); return; }
-    const order = {
+    var order = {
       id: genId('KYO'),
       userId: currentUser.id,
       userName: currentUser.name,
       timestamp: Date.now(),
-      items: cart.map(c=>({name:c.name, qty:c.qty, price:c.price, catLabel:c.catLabel})),
+      items: cart.map(function(c){ return { name:c.name, qty:c.qty, price:c.price, catLabel:c.catLabel }; }),
       total: cartTotal(),
       status: 'aguardando'
     };
-    orders.unshift(order);
-    currentUser.totalSpent = (currentUser.totalSpent||0) + order.total;
-    await saveOrders();
-    await saveUsers();
+    if(USE_SUPABASE){
+      var ok = await createOrderSupabase(order);
+      if(!ok){ showToast('Erro ao criar o pedido.'); return; }
+      orders.unshift(order);
+      await loadRankingSupabase();
+      renderRanking();
+    } else {
+      orders.unshift(order);
+      currentUser.totalSpent = (currentUser.totalSpent||0) + order.total;
+      await saveOrdersLocal();
+      await saveUsersLocal();
+      addChatSystem('🛒 Novo pedido criado: ' + order.id);
+    }
     cart = [];
     renderCartBadge(); renderCart(); renderSimItems(); renderPriceTable();
     closeCheckoutModal();
     $('pixOrderId').textContent = order.id;
     $('pixOverlay').classList.add('open');
-    addChatSystem('🛒 Novo pedido criado: ' + order.id);
     if(isAdmin) renderAdminAll();
   });
-  $('pixClose').addEventListener('click', ()=> $('pixOverlay').classList.remove('open'));
-  $('pixOverlay').addEventListener('click', e=>{ if(e.target.id==='pixOverlay') $('pixOverlay').classList.remove('open'); });
-  $('pixDoneBtn').addEventListener('click', ()=> $('pixOverlay').classList.remove('open'));
-  $('cartOpenBtn').addEventListener('click', ()=>{
+  $('pixClose').addEventListener('click', function(){ $('pixOverlay').classList.remove('open'); });
+  $('pixOverlay').addEventListener('click', function(e){ if(e.target.id==='pixOverlay') $('pixOverlay').classList.remove('open'); });
+  $('pixDoneBtn').addEventListener('click', function(){ $('pixOverlay').classList.remove('open'); });
+  $('cartOpenBtn').addEventListener('click', function(){
     $('simulador').scrollIntoView({behavior:'smooth', block:'start'});
-    if(cart.length>0){ /* highlight cart */ }
   });
 
   /* ============================================================
      AVALIAÇÕES
      ============================================================ */
-  let reviewRating = 0;
+  var reviewRating = 0;
   function renderStarInput(){
-    const wrap = $('starInput');
+    var wrap = $('starInput');
     wrap.innerHTML = '';
-    for(let i=1;i<=5;i++){
-      const b = document.createElement('button');
-      b.type = 'button';
-      b.textContent = '★';
-      b.className = i<=reviewRating ? 'on' : '';
-      b.addEventListener('click', ()=>{ reviewRating = i; renderStarInput(); });
-      wrap.appendChild(b);
+    for(var i=1;i<=5;i++){
+      (function(idx){
+        var b = document.createElement('button');
+        b.type = 'button';
+        b.textContent = '★';
+        b.className = idx<=reviewRating ? 'on' : '';
+        b.addEventListener('click', function(){ reviewRating = idx; renderStarInput(); });
+        wrap.appendChild(b);
+      })(i);
     }
   }
   function renderReviews(){
-    const grid = $('reviewGrid');
+    var grid = $('reviewGrid');
     if(reviews.length===0){ grid.innerHTML = '<div class="empty-state">Nenhuma avaliação ainda. Seja o primeiro!</div>'; return; }
-    grid.innerHTML = reviews.map(r=>`
-      <div class="review-card">
-        <div class="rhead">
-          <span class="avatar">${escapeHtml((r.name||'?').charAt(0).toUpperCase())}</span>
-          <div>
-            <div class="rname">${escapeHtml(r.name)}</div>
-            <div class="rdate">${formatDateShort(r.date)}</div>
-          </div>
-        </div>
-        <div class="stars">${'★'.repeat(r.rating)}${'☆'.repeat(5-r.rating)}</div>
-        <div class="rtext">${escapeHtml(r.text)}</div>
-      </div>`).join('');
+    grid.innerHTML = reviews.map(function(r){
+      return '<div class="review-card"><div class="rhead"><span class="avatar">' + escapeHtml((r.name||'?').charAt(0).toUpperCase()) + '</span>' +
+        '<div><div class="rname">' + escapeHtml(r.name) + '</div><div class="rdate">' + formatDateShort(r.date) + '</div></div></div>' +
+        '<div class="stars">' + '★'.repeat(r.rating) + '☆'.repeat(5-r.rating) + '</div>' +
+        '<div class="rtext">' + escapeHtml(r.text) + '</div></div>';
+    }).join('');
   }
-  $('reviewSubmitBtn').addEventListener('click', async ()=>{
+  $('reviewSubmitBtn').addEventListener('click', async function(){
     if(!currentUser){ showToast('Entre na sua conta para avaliar.'); openAccountModal(); return; }
-    const text = $('reviewText').value.trim();
+    var text = $('reviewText').value.trim();
     if(reviewRating===0){ showToast('Escolha uma quantidade de estrelas.'); return; }
     if(text.length<5){ showToast('Escreva um comentário com pelo menos 5 caracteres.'); return; }
-    reviews.unshift({ id:genId('R'), name:currentUser.name, userId:currentUser.id, rating:reviewRating, text, date:Date.now() });
-    await saveReviews();
+    if(USE_SUPABASE){
+      var created = await addReviewSupabase({ rating:reviewRating, text:text });
+      if(created){ reviews.unshift(created); }
+    } else {
+      reviews.unshift({ id:genId('R'), name:currentUser.name, userId:currentUser.id, rating:reviewRating, text:text, date:Date.now() });
+      await saveReviewsLocal();
+    }
     $('reviewText').value = '';
     reviewRating = 0; renderStarInput();
     renderReviews();
@@ -1579,101 +1785,97 @@
   /* ============================================================
      EVENTOS
      ============================================================ */
-  const EV_LABEL = { acontecer:'Acontecer', ativo:'Ativo', encerrado:'Encerrado' };
+  var EV_LABEL = { acontecer:'Acontecer', ativo:'Ativo', encerrado:'Encerrado' };
   function renderEvents(){
-    const grid = $('eventGrid');
+    var grid = $('eventGrid');
     if(settings.events.length===0){ grid.innerHTML = '<div class="empty-state">Nenhum evento no momento.</div>'; return; }
-    grid.innerHTML = settings.events.map(ev=>{
-      const d = new Date(ev.date + 'T00:00:00');
-      const st = EV_LABEL[ev.status] || ev.status;
-      return `
-        <div class="event-card">
-          <div class="event-date"><div class="d">${d.getDate()}</div><div class="m">${d.toLocaleDateString('pt-BR',{month:'short'})}</div></div>
-          <div class="event-body">
-            <h4>${escapeHtml(ev.title)}</h4>
-            <p>${escapeHtml(ev.desc)}</p>
-          </div>
-          <span class="event-badge ${ev.status}">${st}</span>
-        </div>`;
+    grid.innerHTML = settings.events.map(function(ev){
+      var d = new Date(ev.date + 'T00:00:00');
+      var st = EV_LABEL[ev.status] || ev.status;
+      return '<div class="event-card"><div class="event-date"><div class="d">' + d.getDate() + '</div><div class="m">' + d.toLocaleDateString('pt-BR',{month:'short'}) + '</div></div>' +
+        '<div class="event-body"><h4>' + escapeHtml(ev.title) + '</h4><p>' + escapeHtml(ev.desc) + '</p></div>' +
+        '<span class="event-badge ' + ev.status + '">' + st + '</span></div>';
     }).join('');
   }
 
   /* ============================================================
      RANKING
      ============================================================ */
+  async function refreshRanking(){
+    if(USE_SUPABASE){
+      await loadRankingSupabase();
+    } else {
+      ranking = users.filter(function(u){ return (u.totalSpent||0)>0; }).sort(function(a,b){ return (b.totalSpent||0)-(a.totalSpent||0); }).slice(0,15)
+        .map(function(u){ return { name:u.name, totalSpent:u.totalSpent, ordersCount:u.ordersCount||0 }; });
+    }
+    renderRanking();
+  }
   function renderRanking(){
-    const list = $('rankList');
-    const ranked = users.filter(u=>(u.totalSpent||0)>0).sort((a,b)=> (b.totalSpent||0)-(a.totalSpent||0)).slice(0,15);
-    if(ranked.length===0){ list.innerHTML = '<div class="empty-state">Nenhum cliente no ranking ainda. Faça um pedido e apareça aqui!</div>'; return; }
-    const max = ranked[0].totalSpent || 1;
-    list.innerHTML = ranked.map((u,i)=>`
-      <div class="rank-row${i<3?' top':''}">
-        <span class="rank-pos">#${i+1}</span>
-        <div class="rank-info">
-          <b>${escapeHtml(u.name)}</b>
-          <div class="rank-bar"><i style="width:${Math.max(8, Math.round((u.totalSpent/max)*100))}%"></i></div>
-          <div class="rlbl">${u.ordersCount||0} pedidos</div>
-        </div>
-        <span class="rank-val">${formatBRL(u.totalSpent)}</span>
-      </div>`).join('');
+    var list = $('rankList');
+    if(!ranking || ranking.length===0){ list.innerHTML = '<div class="empty-state">Nenhum cliente no ranking ainda. Faça um pedido e apareça aqui!</div>'; return; }
+    var max = ranking[0].totalSpent || 1;
+    list.innerHTML = ranking.map(function(u,i){
+      return '<div class="rank-row' + (i<3?' top':'') + '"><span class="rank-pos">#' + (i+1) + '</span>' +
+        '<div class="rank-info"><b>' + escapeHtml(u.name) + '</b>' +
+        '<div class="rank-bar"><i style="width:' + Math.max(8, Math.round((u.totalSpent/max)*100)) + '%"></i></div>' +
+        '<div class="rlbl">' + (u.ordersCount||0) + ' pedidos</div></div>' +
+        '<span class="rank-val">' + formatBRL(u.totalSpent) + '</span></div>';
+    }).join('');
   }
 
   /* ============================================================
      CHAT GERAL
      ============================================================ */
   function renderChat(){
-    const body = $('chatBody');
+    var body = $('chatBody');
     $('chatCount').textContent = chat.length + ' mensagens';
     $('chatLoginNote').textContent = currentUser ? 'Conectado como ' + currentUser.name + ' — respeite os outros participantes.' : 'Faça login para participar do chat.';
-    const shouldScroll = body.scrollTop + body.clientHeight >= body.scrollHeight - 40;
-    body.innerHTML = chat.map(m=>{
-      if(m.kind === 'system') return `<div class="msg system">${escapeHtml(m.text)}</div>`;
-      const mine = currentUser && m.userId === currentUser.id;
-      const cls = m.kind === 'bot' ? 'botmsg' : (mine ? 'mine' : 'other');
-      return `
-        <div class="msg ${cls}">
-          <div class="mname">${mine ? 'Você' : escapeHtml(m.name)}${m.kind==='bot' ? ' 🤖' : ''}</div>
-          <div>${escapeHtml(m.text)}</div>
-          <div class="mtime">${formatDate(m.ts)}</div>
-        </div>`;
+    var shouldScroll = body.scrollTop + body.clientHeight >= body.scrollHeight - 40;
+    body.innerHTML = chat.map(function(m){
+      if(m.kind === 'system') return '<div class="msg system">' + escapeHtml(m.text) + '</div>';
+      var mine = currentUser && m.userId === currentUser.id;
+      var cls = m.kind === 'bot' ? 'botmsg' : (mine ? 'mine' : 'other');
+      return '<div class="msg ' + cls + '"><div class="mname">' + (mine ? 'Você' : escapeHtml(m.name)) + (m.kind==='bot' ? ' 🤖' : '') + '</div>' +
+        '<div>' + escapeHtml(m.text) + '</div><div class="mtime">' + formatDate(m.ts) + '</div></div>';
     }).join('');
     if(shouldScroll || lastChatLen < chat.length) body.scrollTop = body.scrollHeight;
     lastChatLen = chat.length;
   }
-  async function addChatMsg(text, kind){
+  async function addChatMsgLocal(text, kind){
     if(!currentUser && kind!=='bot' && kind!=='system') return;
     chat.push({
       id: genId('M'),
       userId: currentUser ? currentUser.id : 'system',
       name: currentUser ? currentUser.name : (kind==='bot' ? 'Assistente' : 'Sistema'),
-      text, ts: Date.now(), kind: kind||'user'
+      text:text, ts:Date.now(), kind:kind||'user'
     });
     if(chat.length > 300) chat = chat.slice(-300);
-    await saveChat();
+    await saveChatLocal();
     renderChat();
   }
-  async function addChatSystem(text){ chat.push({id:genId('M'), userId:'system', name:'Sistema', text, ts:Date.now(), kind:'system'}); if(chat.length>300) chat=chat.slice(-300); await saveChat(); renderChat(); }
+  async function addChatSystem(text){ chat.push({id:genId('M'), userId:'system', name:'Sistema', text:text, ts:Date.now(), kind:'system'}); if(chat.length>300) chat=chat.slice(-300); await saveChatLocal(); renderChat(); }
   function pollChat(){
-    dbGet('shop.chat', []).then(d=>{
+    dbGet('shop.chat', []).then(function(d){
       if(d.length !== chat.length || (d.length && chat.length && d[d.length-1].id !== chat[chat.length-1].id)){
         chat = d;
         renderChat();
       }
     });
   }
-  $('chatSendBtn').addEventListener('click', async ()=>{
-    const text = $('chatMsgInput').value.trim();
+  $('chatSendBtn').addEventListener('click', async function(){
+    var text = $('chatMsgInput').value.trim();
     if(!text) return;
     if(!currentUser){ showToast('Faça login para enviar mensagem.'); openAccountModal(); return; }
     $('chatMsgInput').value = '';
-    await addChatMsg(text, 'user');
+    if(USE_SUPABASE) await addChatMsgSupabase(text, 'user');
+    else await addChatMsgLocal(text, 'user');
   });
-  $('chatMsgInput').addEventListener('keydown', e=>{ if(e.key==='Enter') $('chatSendBtn').click(); });
+  $('chatMsgInput').addEventListener('keydown', function(e){ if(e.key==='Enter') $('chatSendBtn').click(); });
 
   /* ============================================================
      CONTA (LOGIN / REGISTRO)
      ============================================================ */
-  let authMode = 'login';
+  var authMode = 'login';
   function openAccountModal(){
     $('accountOverlay').classList.add('open');
     if(currentUser) showAccountView();
@@ -1682,7 +1884,7 @@
   function closeAccountModal(){ $('accountOverlay').classList.remove('open'); }
   $('accountBtn').addEventListener('click', openAccountModal);
   $('accountClose').addEventListener('click', closeAccountModal);
-  $('accountOverlay').addEventListener('click', e=>{ if(e.target.id==='accountOverlay') closeAccountModal(); });
+  $('accountOverlay').addEventListener('click', function(e){ if(e.target.id==='accountOverlay') closeAccountModal(); });
 
   function showAuthView(mode){
     authMode = mode;
@@ -1695,71 +1897,97 @@
     $('authTabRegister').classList.toggle('active', mode==='register');
     $('authError').style.display = 'none';
   }
-  $('authTabLogin').addEventListener('click', ()=> showAuthView('login'));
-  $('authTabRegister').addEventListener('click', ()=> showAuthView('register'));
+  $('authTabLogin').addEventListener('click', function(){ showAuthView('login'); });
+  $('authTabRegister').addEventListener('click', function(){ showAuthView('register'); });
 
-  $('authSubmitBtn').addEventListener('click', async ()=>{
-    const name = $('authName').value.trim();
-    const pass = $('authPass').value;
+  function setAuthError(msg){ var el=$('authError'); el.textContent = msg; el.style.display = 'block'; }
+
+  $('authSubmitBtn').addEventListener('click', async function(){
+    var name = $('authName').value.trim();
+    var pass = $('authPass').value;
     $('authError').style.display = 'none';
     if(name.length < 3){ setAuthError('O nome precisa ter pelo menos 3 caracteres.'); return; }
     if(pass.length < 4){ setAuthError('A senha precisa ter pelo menos 4 caracteres.'); return; }
-    if(authMode === 'register'){
-      if($('authConfirm').value !== pass){ setAuthError('As senhas não coincidem.'); return; }
-      if(users.some(u=>u.name.toLowerCase() === name.toLowerCase())){ setAuthError('Este nome de usuário já existe.'); return; }
-      const salt = randomHex(8);
-      const u = { id: genId('U'), name, salt, passHash: await hashPass(pass, salt), token: randomHex(16), createdAt: Date.now(), totalSpent:0, ordersCount:0 };
-      users.push(u);
-      await saveUsers();
-      currentUser = u;
-      saveSession();
-      showToast('Conta criada! Bem-vindo(a), ' + name + '! 🎉', true);
-    } else {
-      const u = users.find(x=>x.name.toLowerCase() === name.toLowerCase());
-      if(!u){ setAuthError('Conta não encontrada. Crie uma conta primeiro.'); return; }
-      const h = await hashPass(pass, u.salt);
-      if(h !== u.passHash){ setAuthError('Senha incorreta.'); return; }
-      u.token = randomHex(16);
-      await saveUsers();
-      currentUser = u;
-      saveSession();
-      showToast('Bem-vindo(a) de volta, ' + u.name + '!', true);
+    try{
+      if(authMode === 'register'){
+        if($('authConfirm').value !== pass){ setAuthError('As senhas não coincidem.'); return; }
+        if(!/^[a-zA-Z0-9_\-]{3,24}$/.test(name)){ setAuthError('Use apenas letras, números, _ ou - (3 a 24 caracteres).'); return; }
+        if(USE_SUPABASE){
+          await registerSupabase(name, pass);
+        } else {
+          if(users.some(function(u){ return u.name.toLowerCase() === name.toLowerCase(); })){ setAuthError('Este nome de usuário já existe.'); return; }
+          var salt = randomHex(8);
+          var u = { id: genId('U'), name:name, salt:salt, passHash: await hashPass(pass, salt), token: randomHex(16), createdAt: Date.now(), totalSpent:0, ordersCount:0 };
+          users.push(u);
+          await saveUsersLocal();
+          currentUser = u;
+          saveSession();
+        }
+        showToast('Conta criada! Bem-vindo(a), ' + name + '! 🎉', true);
+      } else {
+        if(USE_SUPABASE){
+          await loginSupabase(name, pass);
+        } else {
+          var found = users.find(function(x){ return x.name.toLowerCase() === name.toLowerCase(); });
+          if(!found){ setAuthError('Conta não encontrada. Crie uma conta primeiro.'); return; }
+          var h = await hashPass(pass, found.salt);
+          if(h !== found.passHash){ setAuthError('Senha incorreta.'); return; }
+          found.token = randomHex(16);
+          await saveUsersLocal();
+          currentUser = found;
+          saveSession();
+        }
+        showToast('Bem-vindo(a) de volta, ' + name + '!', true);
+      }
+    }catch(err){
+      setAuthError(err.message || 'Erro inesperado.');
+      return;
     }
     updateAccountUI();
     showAccountView();
-    renderAccountOrders();
-    renderRanking();
+    await afterAuth();
   });
-  function setAuthError(msg){ const el=$('authError'); el.textContent = msg; el.style.display = 'block'; }
-  $('authName').addEventListener('keydown', e=>{ if(e.key==='Enter') $('authSubmitBtn').click(); });
-  $('authPass').addEventListener('keydown', e=>{ if(e.key==='Enter') $('authSubmitBtn').click(); });
+  $('authName').addEventListener('keydown', function(e){ if(e.key==='Enter') $('authSubmitBtn').click(); });
+  $('authPass').addEventListener('keydown', function(e){ if(e.key==='Enter') $('authSubmitBtn').click(); });
+
+  async function afterAuth(){
+    if(USE_SUPABASE){
+      await loadOrdersSupabase();
+      if(isAdmin){ await loadUsersSupabase(); await loadContactsSupabase(); }
+      await refreshRanking();
+      if(isAdmin) renderAdminAll();
+    }
+    renderChat();
+    renderRanking();
+    renderAccountOrders();
+  }
 
   function showAccountView(){
     $('authView').style.display = 'none';
     $('accountView').style.display = 'block';
     if(!currentUser) return;
     $('accountHello').textContent = 'Olá, ' + currentUser.name + '!';
-    $('myOrdersCount').textContent = orders.filter(o=>o.userId===currentUser.id).length;
-    $('mySpent').textContent = formatBRL(currentUser.totalSpent||0);
+    var mine = orders.filter(function(o){ return o.userId===currentUser.id; });
+    $('myOrdersCount').textContent = mine.length;
+    var spent = mine.reduce(function(s,o){ return s+(o.total||0); }, 0);
+    $('mySpent').textContent = formatBRL(spent);
     renderAccountOrders();
   }
   function renderAccountOrders(){
-    const mine = orders.filter(o=>o.userId===currentUser.id);
-    const wrap = $('myOrders');
+    var mine = orders.filter(function(o){ return o.userId===currentUser.id; });
+    var wrap = $('myOrders');
     if(mine.length===0){ wrap.innerHTML = '<div class="empty-state">Você ainda não fez nenhum pedido.</div>'; return; }
-    wrap.innerHTML = mine.map(o=>`
-      <div class="order-card">
-        <div class="order-top">
-          <span class="oid">${o.id} · ${formatDate(o.timestamp)}</span>
-          <span class="badge ${o.status}">${o.status==='aguardando'?'Aguardando pagamento':o.status==='pago'?'Pago':o.status==='andamento'?'Em andamento':o.status==='concluido'?'Concluído':'Cancelado'}</span>
-        </div>
-        <div class="order-items">${o.items.map(i=>`<div>${i.qty}× ${escapeHtml(i.name)}</div>`).join('')}</div>
-        <div class="order-foot"><span>Total</span><span class="total">${formatBRL(o.total)}</span></div>
-      </div>`).join('');
+    wrap.innerHTML = mine.map(function(o){
+      var lbl = o.status==='aguardando'?'Aguardando pagamento':o.status==='pago'?'Pago':o.status==='andamento'?'Em andamento':o.status==='concluido'?'Concluído':'Cancelado';
+      return '<div class="order-card"><div class="order-top"><span class="oid">' + o.id + ' · ' + formatDate(o.timestamp) + '</span>' +
+        '<span class="badge ' + o.status + '">' + lbl + '</span></div>' +
+        '<div class="order-items">' + o.items.map(function(i){ return '<div>' + i.qty + '× ' + escapeHtml(i.name) + '</div>'; }).join('') + '</div>' +
+        '<div class="order-foot"><span>Total</span><span class="total">' + formatBRL(o.total) + '</span></div></div>';
+    }).join('');
   }
-  $('logoutBtn').addEventListener('click', ()=>{
-    currentUser = null;
-    saveSession();
+  $('logoutBtn').addEventListener('click', async function(){
+    if(USE_SUPABASE) await logoutSupabase();
+    else { currentUser = null; saveSession(); }
     updateAccountUI();
     showAuthView('login');
     showToast('Você saiu da conta.');
@@ -1769,8 +1997,8 @@
   /* ============================================================
      SUPPORT BOT (IA local)
      ============================================================ */
-  const BOT_QUICK = ['Preços', 'Como pagar?', 'Status da loja', 'Reembolso', 'Termos', 'Falar com suporte'];
-  const BOT_RULES = [
+  var BOT_QUICK = ['Preços', 'Como pagar?', 'Status da loja', 'Reembolso', 'Termos', 'Falar com suporte'];
+  var BOT_RULES = [
     { re:/pix|pagament|como pago|pagar/, ans:'Aceitamos apenas pagamento via PIX. Ao finalizar o pedido, envie o comprovante no grupo do WhatsApp e informe o número do pedido. A upagem começa só após a confirmação do pagamento total.' },
     { re:/preço|preco|quanto cust|tabela|valor|valores/, ans:'Todos os preços estão na aba Tabela e no Simulador. Lá você monta o pedido e vê o valor final na hora. 💰' },
     { re:/status|loja (está|ta)|funcionando|offline|atualiza/, ans:'O status atual da loja fica no topo da página: 🟢 Working (funcionando), 🟠 Updating (atualizando) ou 🔴 Down (fora do ar).' },
@@ -1787,72 +2015,95 @@
     { re:/chat|geral|conversar/, ans:'A aba Chat é geral: você conversa com outros clientes e com a equipe. Faça login e participe!' }
   ];
   function botAnswer(q){
-    const lower = ' ' + q.toLowerCase() + ' ';
-    for(const r of BOT_RULES){ if(r.re.test(lower)) return r.ans; }
+    var lower = ' ' + q.toLowerCase() + ' ';
+    for(var i=0;i<BOT_RULES.length;i++){ if(BOT_RULES[i].re.test(lower)) return BOT_RULES[i].ans; }
     return 'Boa pergunta! 😅 Não achei essa resposta automática. Fale com um atendente real no grupo do WhatsApp: link na página (botão verde) ou na aba Contato. Também posso ajudar com preços, pagamento, status e termos.';
   }
-  function openBot(){ $('botWindow').classList.add('open'); }
-  $('botFab').addEventListener('click', ()=> $('botWindow').classList.toggle('open'));
+  $('botFab').addEventListener('click', function(){ $('botWindow').classList.toggle('open'); });
   function renderQuickChips(){
-    const wrap = $('botQuickChips');
-    wrap.innerHTML = BOT_QUICK.map(q=>`<button data-qc="${escapeHtml(q)}">${escapeHtml(q)}</button>`).join('');
-    wrap.querySelectorAll('[data-qc]').forEach(b=>{
-      b.addEventListener('click', ()=>{
+    var wrap = $('botQuickChips');
+    wrap.innerHTML = BOT_QUICK.map(function(q){ return '<button data-qc="' + escapeHtml(q) + '">' + escapeHtml(q) + '</button>'; }).join('');
+    wrap.querySelectorAll('[data-qc]').forEach(function(b){
+      b.addEventListener('click', function(){
         if(b.dataset.qc === 'Falar com suporte'){ window.open(settings.config.whats || WHATS_DEFAULT, '_blank'); return; }
         sendBotMsg(b.dataset.qc);
       });
     });
   }
-  async function sendBotMsg(text){
+  function sendBotMsg(text){
     if(!text.trim()) return;
     $('botInput').value = '';
-    const body = $('botBody');
-    const uDiv = document.createElement('div');
+    var body = $('botBody');
+    var uDiv = document.createElement('div');
     uDiv.className = 'bot-msg user';
     uDiv.textContent = text;
     body.appendChild(uDiv);
     body.scrollTop = body.scrollHeight;
-    setTimeout(()=>{
-      const bDiv = document.createElement('div');
+    setTimeout(function(){
+      var bDiv = document.createElement('div');
       bDiv.className = 'bot-msg';
       bDiv.textContent = botAnswer(text);
       body.appendChild(bDiv);
       body.scrollTop = body.scrollHeight;
     }, 500);
   }
-  $('botSendBtn').addEventListener('click', ()=> sendBotMsg($('botInput').value));
-  $('botInput').addEventListener('keydown', e=>{ if(e.key==='Enter') sendBotMsg($('botInput').value); });
+  $('botSendBtn').addEventListener('click', function(){ sendBotMsg($('botInput').value); });
+  $('botInput').addEventListener('keydown', function(e){ if(e.key==='Enter') sendBotMsg($('botInput').value); });
 
   /* ============================================================
      ADMIN
      ============================================================ */
-  $('openAdminBtn').addEventListener('click', ()=>{
+  $('openAdminBtn').addEventListener('click', function(){
+    $('adminLoginNote').style.display = 'none';
+    $('adminLoginError').style.display = 'none';
     $('admin').classList.add('open');
     $('admin').scrollIntoView({behavior:'smooth'});
+    if(USE_SUPABASE && currentUser && currentUser.name){
+      $('adminLoginNote').textContent = 'Logado como ' + currentUser.name + '. Digite o PIN de acesso para liberar o painel.';
+      $('adminLoginNote').style.display = 'block';
+    }
   });
-  $('adminLoginBtn').addEventListener('click', async ()=>{
-    const val = $('adminPassInput').value;
-    const h = await hashPass(val, settings.admin.salt);
-    if(h === settings.admin.hash){
-      isAdmin = true;
+  $('adminLoginBtn').addEventListener('click', async function(){
+    var val = $('adminPassInput').value;
+    var h = await hashPass(val, settings.admin.salt || SEED_ADMIN.salt);
+    if(h === (settings.admin.hash || SEED_ADMIN.hash)){
+      if(USE_SUPABASE){
+        if(!currentUser){
+          $('adminLoginError').textContent = 'Crie/entre na sua conta primeiro (botão Entrar).';
+          $('adminLoginError').style.display = 'block';
+          return;
+        }
+        var ok = await promoteAdminSupabase();
+        if(!ok){
+          $('adminLoginError').textContent = 'Não foi possível liberar o acesso. Verifique as permissões do Supabase.';
+          $('adminLoginError').style.display = 'block';
+          return;
+        }
+        isAdmin = true;
+        currentUser.isAdmin = true;
+      } else {
+        isAdmin = true;
+      }
       $('adminLoginView').style.display = 'none';
       $('adminMainView').style.display = 'block';
       $('adminLoginError').style.display = 'none';
       $('adminPassInput').value = '';
+      if(USE_SUPABASE){ await loadUsersSupabase(); await loadContactsSupabase(); }
       populateAdminSettingsForm();
       renderAdminAll();
+      if(USE_SUPABASE){ await refreshRanking(); }
     } else {
       $('adminLoginError').style.display = 'block';
     }
   });
-  $('adminPassInput').addEventListener('keydown', e=>{ if(e.key==='Enter') $('adminLoginBtn').click(); });
-  $('adminLogoutBtn').addEventListener('click', ()=>{ isAdmin = false; $('adminLoginView').style.display='block'; $('adminMainView').style.display='none'; });
+  $('adminPassInput').addEventListener('keydown', function(e){ if(e.key==='Enter') $('adminLoginBtn').click(); });
+  $('adminLogoutBtn').addEventListener('click', function(){ isAdmin = false; $('adminLoginView').style.display='block'; $('adminMainView').style.display='none'; });
 
-  document.querySelectorAll('.admin-tabs button').forEach(btn=>{
-    btn.addEventListener('click', ()=>{
-      document.querySelectorAll('.admin-tabs button').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.admin-tabs button').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      document.querySelectorAll('.admin-tabs button').forEach(function(b){ b.classList.remove('active'); });
       btn.classList.add('active');
-      document.querySelectorAll('.admin-panel').forEach(p=>p.classList.remove('active'));
+      document.querySelectorAll('.admin-panel').forEach(function(p){ p.classList.remove('active'); });
       $(btn.dataset.panel).classList.add('active');
     });
   });
@@ -1863,190 +2114,167 @@
   function renderAdminStats(){
     $('statUsers').textContent = users.length;
     $('statOrders').textContent = orders.length;
-    $('statPending').textContent = orders.filter(o=>o.status==='aguardando').length;
-    $('statRevenue').textContent = formatBRL(orders.filter(o=>o.status==='concluido'||o.status==='pago'||o.status==='andamento').reduce((s,o)=>s+o.total,0));
+    $('statPending').textContent = orders.filter(function(o){ return o.status==='aguardando'; }).length;
+    $('statRevenue').textContent = formatBRL(orders.filter(function(o){ return o.status==='concluido'||o.status==='pago'||o.status==='andamento'; }).reduce(function(s,o){ return s+o.total; },0));
     $('statMessages').textContent = contacts.length;
   }
-  const ORDER_BADGE = { aguardando:['Aguardando','aguardando'], pago:['Pago','pago'], andamento:['Em andamento','andamento'], concluido:['Concluído','concluido'], cancelado:['Cancelado','cancelado'] };
+  var ORDER_BADGE = { aguardando:['Aguardando','aguardando'], pago:['Pago','pago'], andamento:['Em andamento','andamento'], concluido:['Concluído','concluido'], cancelado:['Cancelado','cancelado'] };
   function renderAdminOrders(){
-    const wrap = $('ordersListAdmin');
+    var wrap = $('ordersListAdmin');
     if(orders.length===0){ wrap.innerHTML = '<div class="empty-state">Nenhum pedido ainda.</div>'; return; }
-    wrap.innerHTML = orders.map(o=>{
-      const b = ORDER_BADGE[o.status] || ORDER_BADGE.aguardando;
-      return `
-      <div class="row-card">
-        <div class="row-top">
-          <div class="rid">${o.id} · ${formatDate(o.timestamp)} · ${escapeHtml(o.userName)}</div>
-          <span class="badge ${b[1]}">${b[0]}</span>
-        </div>
-        <div class="row-meta" style="flex-direction:column; gap:6px;">${o.items.map(i=>`<span><b>${i.qty}×</b> ${escapeHtml(i.name)} — ${formatBRL(i.price*i.qty)}</span>`).join('')}</div>
-        <div class="row-meta"><span>Total: <b style="color:var(--gold-bright);">${formatBRL(o.total)}</b></span></div>
-        <div class="row-actions">
-          <select data-oact="status" data-oid="${o.id}">
-            ${Object.keys(ORDER_BADGE).map(k=>`<option value="${k}" ${o.status===k?'selected':''}>${ORDER_BADGE[k][0]}</option>`).join('')}
-          </select>
-          <button class="btn btn-danger-outline btn-sm" data-oact="delete" data-oid="${o.id}">Excluir</button>
-        </div>
-      </div>`;
+    wrap.innerHTML = orders.map(function(o){
+      var b = ORDER_BADGE[o.status] || ORDER_BADGE.aguardando;
+      return '<div class="row-card"><div class="row-top"><div class="rid">' + o.id + ' · ' + formatDate(o.timestamp) + ' · ' + escapeHtml(o.userName) + '</div>' +
+        '<span class="badge ' + b[1] + '">' + b[0] + '</span></div>' +
+        '<div class="row-meta" style="flex-direction:column; gap:6px;">' + o.items.map(function(i){ return '<span><b>' + i.qty + '×</b> ' + escapeHtml(i.name) + ' — ' + formatBRL(i.price*i.qty) + '</span>'; }).join('') + '</div>' +
+        '<div class="row-meta"><span>Total: <b style="color:var(--gold-bright);">' + formatBRL(o.total) + '</b></span></div>' +
+        '<div class="row-actions"><select data-oact="status" data-oid="' + o.id + '">' +
+        Object.keys(ORDER_BADGE).map(function(k){ return '<option value="' + k + '"' + (o.status===k?' selected':'') + '>' + ORDER_BADGE[k][0] + '</option>'; }).join('') +
+        '</select><button class="btn btn-danger-outline btn-sm" data-oact="delete" data-oid="' + o.id + '">Excluir</button></div></div>';
     }).join('');
-    wrap.querySelectorAll('[data-oact="status"]').forEach(sel=>{
-      sel.addEventListener('change', async (e)=>{
-        const o = orders.find(x=>x.id===sel.dataset.oid);
-        if(o){ o.status = e.target.value; await saveOrders(); renderAdminOrders(); renderAdminStats(); }
+    wrap.querySelectorAll('[data-oact="status"]').forEach(function(sel){
+      sel.addEventListener('change', async function(e){
+        var o = orders.find(function(x){ return x.id===sel.dataset.oid; });
+        if(o){
+          o.status = e.target.value;
+          if(USE_SUPABASE){ await updateOrderStatusSupabase(o.id, e.target.value); }
+          else { await saveOrdersLocal(); }
+          renderAdminOrders(); renderAdminStats();
+        }
       });
     });
-    wrap.querySelectorAll('[data-oact="delete"]').forEach(b=>{
-      b.addEventListener('click', async ()=>{
-        orders = orders.filter(x=>x.id!==b.dataset.oid);
-        await saveOrders(); renderAdminOrders(); renderAdminStats();
+    wrap.querySelectorAll('[data-oact="delete"]').forEach(function(b){
+      b.addEventListener('click', async function(){
+        if(USE_SUPABASE){ await deleteOrderSupabase(b.dataset.oid); }
+        orders = orders.filter(function(x){ return x.id!==b.dataset.oid; });
+        if(!USE_SUPABASE) await saveOrdersLocal();
+        renderAdminOrders(); renderAdminStats();
         showToast('Pedido removido.');
       });
     });
   }
   function renderAdminUsers(){
-    const wrap = $('usersListAdmin');
+    var wrap = $('usersListAdmin');
     if(users.length===0){ wrap.innerHTML = '<div class="empty-state">Nenhum cliente cadastrado.</div>'; return; }
-    wrap.innerHTML = users.map(u=>`
-      <div class="row-card">
-        <div class="row-top">
-          <div class="rid">${u.id} · cadastrado em ${formatDate(u.createdAt)}</div>
-          <button class="btn btn-danger-outline btn-sm" data-uact="delete" data-uid="${u.id}">Excluir</button>
-        </div>
-        <div class="row-meta">
-          <span>Nome: <b>${escapeHtml(u.name)}</b></span>
-          <span>Gasto total: <b style="color:var(--gold-bright);">${formatBRL(u.totalSpent||0)}</b></span>
-          <span>Pedidos: <b>${orders.filter(o=>o.userId===u.id).length}</b></span>
-        </div>
-      </div>`).join('');
-    wrap.querySelectorAll('[data-uact="delete"]').forEach(b=>{
-      b.addEventListener('click', async ()=>{
-        if(b.dataset.uid === (currentUser&&currentUser.id)){ showToast('Não é possível excluir sua própria conta aqui.'); return; }
-        users = users.filter(x=>x.id!==b.dataset.uid);
-        await saveUsers(); renderAdminUsers(); renderAdminStats(); renderRanking();
-        showToast('Cliente removido.');
-      });
-    });
+    wrap.innerHTML = users.map(function(u){
+      var uo = orders.filter(function(o){ return o.userId===u.id; });
+      var spent = uo.filter(function(o){ return o.status==='pago'||o.status==='andamento'||o.status==='concluido'; }).reduce(function(s,o){ return s+o.total; },0);
+      return '<div class="row-card"><div class="row-top"><div class="rid">' + escapeHtml(u.id) + ' · cadastrado em ' + formatDate(u.createdAt) + '</div></div>' +
+        '<div class="row-meta"><span>Nome: <b>' + escapeHtml(u.name) + '</b>' + (u.isAdmin ? ' <span class="badge pago">admin</span>' : '') + '</span>' +
+        '<span>Gasto total: <b style="color:var(--gold-bright);">' + formatBRL(spent) + '</b></span>' +
+        '<span>Pedidos: <b>' + uo.length + '</b></span></div></div>';
+    }).join('');
   }
   function renderAdminReviews(){
-    const wrap = $('reviewsListAdmin');
+    var wrap = $('reviewsListAdmin');
     if(reviews.length===0){ wrap.innerHTML = '<div class="empty-state">Nenhuma avaliação.</div>'; return; }
-    wrap.innerHTML = reviews.map(r=>`
-      <div class="row-card">
-        <div class="row-top">
-          <div class="rid">${formatDate(r.date)} · ${escapeHtml(r.name)}</div>
-          <button class="btn btn-danger-outline btn-sm" data-ract="delete" data-rid="${r.id}">Excluir</button>
-        </div>
-        <div class="row-meta"><span>${'★'.repeat(r.rating)}${'☆'.repeat(5-r.rating)}</span></div>
-        <div style="color:var(--text-dim); font-size:0.88rem;">${escapeHtml(r.text)}</div>
-      </div>`).join('');
-    wrap.querySelectorAll('[data-ract="delete"]').forEach(b=>{
-      b.addEventListener('click', async ()=>{
-        reviews = reviews.filter(x=>x.id!==b.dataset.rid);
-        await saveReviews(); renderAdminReviews(); renderReviews();
+    wrap.innerHTML = reviews.map(function(r){
+      return '<div class="row-card"><div class="row-top"><div class="rid">' + formatDate(r.date) + ' · ' + escapeHtml(r.name) + '</div>' +
+        '<button class="btn btn-danger-outline btn-sm" data-ract="delete" data-rid="' + escapeHtml(r.id) + '">Excluir</button></div>' +
+        '<div class="row-meta"><span>' + '★'.repeat(r.rating) + '☆'.repeat(5-r.rating) + '</span></div>' +
+        '<div style="color:var(--text-dim); font-size:0.88rem;">' + escapeHtml(r.text) + '</div></div>';
+    }).join('');
+    wrap.querySelectorAll('[data-ract="delete"]').forEach(function(b){
+      b.addEventListener('click', async function(){
+        if(USE_SUPABASE) await deleteReviewSupabase(b.dataset.rid);
+        reviews = reviews.filter(function(x){ return String(x.id)!==String(b.dataset.rid); });
+        if(!USE_SUPABASE) await saveReviewsLocal();
+        renderAdminReviews(); renderReviews();
         showToast('Avaliação removida.');
       });
     });
   }
   function renderAdminEvents(){
-    const wrap = $('eventsListAdmin');
-    wrap.innerHTML = settings.events.map(ev=>`
-      <div class="row-card">
-        <div class="row-top">
-          <div class="rid">${escapeHtml(ev.id)}</div>
-          <button class="btn btn-danger-outline btn-sm" data-eact="delete" data-eid="${ev.id}">Excluir</button>
-        </div>
-        <div class="field" style="margin:0;"><label>Título</label><input value="${escapeHtml(ev.title)}" data-efield="title" data-eid="${ev.id}"></div>
-        <div class="field" style="margin:0;"><label>Descrição</label><textarea data-efield="desc" data-eid="${ev.id}">${escapeHtml(ev.desc)}</textarea></div>
-        <div class="field-row">
-          <div class="field"><label>Data</label><input type="date" value="${ev.date}" data-efield="date" data-eid="${ev.id}"></div>
-          <div class="field"><label>Status</label><select data-efield="status" data-eid="${ev.id}">
-            <option value="acontecer" ${ev.status==='acontecer'?'selected':''}>Acontecer</option>
-            <option value="ativo" ${ev.status==='ativo'?'selected':''}>Ativo</option>
-            <option value="encerrado" ${ev.status==='encerrado'?'selected':''}>Encerrado</option>
-          </select></div>
-        </div>
-      </div>`).join('');
-    wrap.querySelectorAll('[data-efield]').forEach(inp=>{
-      inp.addEventListener('change', async (e)=>{
-        const ev = settings.events.find(x=>x.id===inp.dataset.eid);
+    var wrap = $('eventsListAdmin');
+    wrap.innerHTML = settings.events.map(function(ev){
+      return '<div class="row-card"><div class="row-top"><div class="rid">' + escapeHtml(ev.id) + '</div>' +
+        '<button class="btn btn-danger-outline btn-sm" data-eact="delete" data-eid="' + escapeHtml(ev.id) + '">Excluir</button></div>' +
+        '<div class="field" style="margin:0;"><label>Título</label><input value="' + escapeHtml(ev.title) + '" data-efield="title" data-eid="' + escapeHtml(ev.id) + '"></div>' +
+        '<div class="field" style="margin:0;"><label>Descrição</label><textarea data-efield="desc" data-eid="' + escapeHtml(ev.id) + '">' + escapeHtml(ev.desc) + '</textarea></div>' +
+        '<div class="field-row"><div class="field"><label>Data</label><input type="date" value="' + ev.date + '" data-efield="date" data-eid="' + escapeHtml(ev.id) + '"></div>' +
+        '<div class="field"><label>Status</label><select data-efield="status" data-eid="' + escapeHtml(ev.id) + '">' +
+        '<option value="acontecer"' + (ev.status==='acontecer'?' selected':'') + '>Acontecer</option>' +
+        '<option value="ativo"' + (ev.status==='ativo'?' selected':'') + '>Ativo</option>' +
+        '<option value="encerrado"' + (ev.status==='encerrado'?' selected':'') + '>Encerrado</option>' +
+        '</select></div></div></div>';
+    }).join('');
+    wrap.querySelectorAll('[data-efield]').forEach(function(inp){
+      inp.addEventListener('change', async function(e){
+        var ev = settings.events.find(function(x){ return x.id===inp.dataset.eid; });
         if(ev){ ev[inp.dataset.efield] = e.target.value; await saveSettings(); renderEvents(); }
       });
     });
-    wrap.querySelectorAll('[data-eact="delete"]').forEach(b=>{
-      b.addEventListener('click', async ()=>{
-        settings.events = settings.events.filter(x=>x.id!==b.dataset.eid);
+    wrap.querySelectorAll('[data-eact="delete"]').forEach(function(b){
+      b.addEventListener('click', async function(){
+        settings.events = settings.events.filter(function(x){ return x.id!==b.dataset.eid; });
         await saveSettings(); renderAdminEvents(); renderEvents();
         showToast('Evento removido.');
       });
     });
-    const addBtn = document.createElement('button');
+    var addBtn = document.createElement('button');
     addBtn.className = 'btn btn-ghost btn-sm';
     addBtn.textContent = '+ Novo evento';
-    addBtn.addEventListener('click', async ()=>{
+    addBtn.addEventListener('click', async function(){
       settings.events.unshift({ id: genId('ev').toLowerCase(), title:'Novo evento', desc:'Descrição do evento', date:new Date().toISOString().slice(0,10), status:'acontecer' });
       await saveSettings(); renderAdminEvents(); renderEvents();
     });
     wrap.appendChild(addBtn);
   }
   function renderAdminMessages(){
-    const wrap = $('messagesListAdmin');
+    var wrap = $('messagesListAdmin');
     if(contacts.length===0){ wrap.innerHTML = '<div class="empty-state">Nenhuma mensagem ainda.</div>'; return; }
-    wrap.innerHTML = contacts.map(m=>`
-      <div class="row-card">
-        <div class="row-top">
-          <div class="rid">${formatDate(m.timestamp)} · ${escapeHtml(m.name)} (${escapeHtml(m.handle)})</div>
-          <button class="btn btn-danger-outline btn-sm" data-mact="delete" data-mid="${m.id}">Excluir</button>
-        </div>
-        <div style="font-weight:800;">${escapeHtml(m.subject)}</div>
-        <div style="color:var(--text-dim); font-size:0.88rem;">${escapeHtml(m.message)}</div>
-      </div>`).join('');
-    wrap.querySelectorAll('[data-mact="delete"]').forEach(b=>{
-      b.addEventListener('click', async ()=>{
-        contacts = contacts.filter(x=>x.id!==b.dataset.mid);
-        await saveContacts(); renderAdminMessages(); renderAdminStats();
+    wrap.innerHTML = contacts.map(function(m){
+      return '<div class="row-card"><div class="row-top"><div class="rid">' + formatDate(m.timestamp) + ' · ' + escapeHtml(m.name) + ' (' + escapeHtml(m.handle) + ')</div>' +
+        '<button class="btn btn-danger-outline btn-sm" data-mact="delete" data-mid="' + escapeHtml(m.id) + '">Excluir</button></div>' +
+        '<div style="font-weight:800;">' + escapeHtml(m.subject) + '</div>' +
+        '<div style="color:var(--text-dim); font-size:0.88rem;">' + escapeHtml(m.message) + '</div></div>';
+    }).join('');
+    wrap.querySelectorAll('[data-mact="delete"]').forEach(function(b){
+      b.addEventListener('click', async function(){
+        if(USE_SUPABASE) await deleteContactSupabase(b.dataset.mid);
+        contacts = contacts.filter(function(x){ return String(x.id)!==String(b.dataset.mid); });
+        if(!USE_SUPABASE) await saveContactsLocal();
+        renderAdminMessages(); renderAdminStats();
         showToast('Mensagem removida.');
       });
     });
   }
   function renderAdminEditor(){
-    const wrap = $('editorCategories');
+    var wrap = $('editorCategories');
     wrap.innerHTML = '';
-    settings.prices.forEach((cat, catIdx)=>{
-      const block = document.createElement('div');
+    settings.prices.forEach(function(cat, catIdx){
+      var block = document.createElement('div');
       block.className = 'editor-cat';
-      block.innerHTML = `
-        <div class="editor-cat-head">
-          <input value="${escapeHtml(cat.label)}" data-cat="${catIdx}" data-field="label">
-          <div style="display:flex; gap:8px; align-items:center;">
-            <input value="${escapeHtml(cat.icon)}" data-cat="${catIdx}" data-field="icon" style="width:60px; text-align:center;">
-            <button class="icon-btn" data-action="delete-cat" data-cat="${catIdx}" title="Excluir categoria">🗑</button>
-          </div>
-        </div>
-        <div data-items="${catIdx}"></div>
-        <div class="add-item-row"><button class="btn btn-ghost btn-sm" data-action="add-item" data-cat="${catIdx}">+ Novo item</button></div>`;
+      block.innerHTML = '<div class="editor-cat-head">' +
+        '<input value="' + escapeHtml(cat.label) + '" data-cat="' + catIdx + '" data-field="label">' +
+        '<div style="display:flex; gap:8px; align-items:center;">' +
+        '<input value="' + escapeHtml(cat.icon) + '" data-cat="' + catIdx + '" data-field="icon" style="width:60px; text-align:center;">' +
+        '<button class="icon-btn" data-action="delete-cat" data-cat="' + catIdx + '" title="Excluir categoria">🗑</button></div></div>' +
+        '<div data-items="' + catIdx + '"></div>' +
+        '<div class="add-item-row"><button class="btn btn-ghost btn-sm" data-action="add-item" data-cat="' + catIdx + '">+ Novo item</button></div>';
       wrap.appendChild(block);
       renderEditorItems(catIdx);
     });
-    wrap.querySelectorAll('input[data-field]').forEach(inp=>{
-      inp.addEventListener('change', async (e)=>{
-        const idx = +e.target.dataset.cat;
+    wrap.querySelectorAll('input[data-field]').forEach(function(inp){
+      inp.addEventListener('change', async function(e){
+        var idx = +e.target.dataset.cat;
         settings.prices[idx][e.target.dataset.field] = e.target.value;
         await saveSettings();
         renderChipsAndTables(); renderAdminStats();
       });
     });
-    wrap.querySelectorAll('[data-action="delete-cat"]').forEach(b=>{
-      b.addEventListener('click', async (e)=>{
-        const idx = +e.target.dataset.cat;
+    wrap.querySelectorAll('[data-action="delete-cat"]').forEach(function(b){
+      b.addEventListener('click', async function(e){
+        var idx = +e.target.dataset.cat;
         if(!confirm('Excluir a categoria "'+settings.prices[idx].label+'" e todos os itens dela?')) return;
         settings.prices.splice(idx,1);
         await saveSettings();
         renderAdminEditor(); renderChipsAndTables(); renderAdminStats();
       });
     });
-    wrap.querySelectorAll('[data-action="add-item"]').forEach(b=>{
-      b.addEventListener('click', async (e)=>{
-        const idx = +e.target.dataset.cat;
+    wrap.querySelectorAll('[data-action="add-item"]').forEach(function(b){
+      b.addEventListener('click', async function(e){
+        var idx = +e.target.dataset.cat;
         settings.prices[idx].items.push({name:'Novo item', price:0});
         await saveSettings();
         renderAdminEditor(); renderChipsAndTables(); renderAdminStats();
@@ -2054,25 +2282,25 @@
     });
   }
   function renderEditorItems(catIdx){
-    const wrap = document.querySelector('[data-items="'+catIdx+'"]');
-    const cat = settings.prices[catIdx];
-    wrap.innerHTML = cat.items.map((it, itemIdx)=>`
-      <div class="editor-item-row">
-        <input value="${escapeHtml(it.name)}" data-cat="${catIdx}" data-item="${itemIdx}" data-field="name">
-        <input type="number" step="0.01" min="0" value="${it.price}" data-cat="${catIdx}" data-item="${itemIdx}" data-field="price">
-        <button class="icon-btn" data-action="delete-item" data-cat="${catIdx}" data-item="${itemIdx}" title="Excluir item">✕</button>
-      </div>`).join('');
-    wrap.querySelectorAll('input[data-field]').forEach(inp=>{
-      inp.addEventListener('change', async (e)=>{
-        const c = +e.target.dataset.cat, i = +e.target.dataset.item, f = e.target.dataset.field;
+    var wrap = document.querySelector('[data-items="'+catIdx+'"]');
+    var cat = settings.prices[catIdx];
+    wrap.innerHTML = cat.items.map(function(it, itemIdx){
+      return '<div class="editor-item-row">' +
+        '<input value="' + escapeHtml(it.name) + '" data-cat="' + catIdx + '" data-item="' + itemIdx + '" data-field="name">' +
+        '<input type="number" step="0.01" min="0" value="' + it.price + '" data-cat="' + catIdx + '" data-item="' + itemIdx + '" data-field="price">' +
+        '<button class="icon-btn" data-action="delete-item" data-cat="' + catIdx + '" data-item="' + itemIdx + '" title="Excluir item">✕</button></div>';
+    }).join('');
+    wrap.querySelectorAll('input[data-field]').forEach(function(inp){
+      inp.addEventListener('change', async function(e){
+        var c = +e.target.dataset.cat, i = +e.target.dataset.item, f = e.target.dataset.field;
         settings.prices[c].items[i][f] = f === 'price' ? parseFloat(e.target.value)||0 : e.target.value;
         await saveSettings();
         renderChipsAndTables(); renderAdminStats();
       });
     });
-    wrap.querySelectorAll('[data-action="delete-item"]').forEach(b=>{
-      b.addEventListener('click', async (e)=>{
-        const c = +e.target.dataset.cat, i = +e.target.dataset.item;
+    wrap.querySelectorAll('[data-action="delete-item"]').forEach(function(b){
+      b.addEventListener('click', async function(e){
+        var c = +e.target.dataset.cat, i = +e.target.dataset.item;
         settings.prices[c].items.splice(i,1);
         await saveSettings();
         renderAdminEditor(); renderChipsAndTables(); renderAdminStats();
@@ -2080,11 +2308,11 @@
     });
   }
   function renderChipsAndTables(){ renderPriceChips(); renderPriceTable(); renderSimChips(); renderSimItems(); }
-  $('addCategoryBtn').addEventListener('click', async ()=>{
-    const label = prompt('Nome da nova categoria:');
+  $('addCategoryBtn').addEventListener('click', async function(){
+    var label = prompt('Nome da nova categoria:');
     if(!label) return;
-    const icon = prompt('Emoji para representar a categoria (ex: 🔥):', '🔥') || '🔥';
-    settings.prices.push({ id: genId('cat').toLowerCase(), label, icon, items: [] });
+    var icon = prompt('Emoji para representar a categoria (ex: 🔥):', '🔥') || '🔥';
+    settings.prices.push({ id: genId('cat').toLowerCase(), label:label, icon:icon, items: [] });
     await saveSettings();
     renderAdminEditor(); renderChipsAndTables(); renderAdminStats();
   });
@@ -2095,7 +2323,7 @@
     $('cfgStatus').value = settings.config.status;
     $('cfgWhats').value = settings.config.whats || WHATS_DEFAULT;
   }
-  $('saveSettingsBtn').addEventListener('click', async ()=>{
+  $('saveSettingsBtn').addEventListener('click', async function(){
     settings.config.shopName = $('cfgShopName').value.trim() || DEFAULT_CONFIG.shopName;
     settings.config.tagline = $('cfgTagline').value.trim() || DEFAULT_CONFIG.tagline;
     settings.config.status = $('cfgStatus').value;
@@ -2104,8 +2332,8 @@
     renderShell();
     showToast('Configurações salvas.', true);
   });
-  $('changePassBtn').addEventListener('click', async ()=>{
-    const val = $('cfgNewPass').value;
+  $('changePassBtn').addEventListener('click', async function(){
+    var val = $('cfgNewPass').value;
     if(val.length < 6){ showToast('Use uma senha com pelo menos 6 caracteres.'); return; }
     settings.admin.salt = randomHex(8);
     settings.admin.hash = await hashPass(val, settings.admin.salt);
@@ -2113,29 +2341,46 @@
     $('cfgNewPass').value = '';
     showToast('Senha alterada.', true);
   });
-  $('exportBtn').addEventListener('click', ()=>{
-    const data = { settings, users, orders, reviews, chat, contacts };
-    const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
-    const a = document.createElement('a');
+  $('exportBtn').addEventListener('click', function(){
+    var data = { settings:settings, users:users, orders:orders, reviews:reviews, chat:chat, contacts:contacts };
+    var blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
+    var a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
     a.download = 'kyo-store-backup-' + new Date().toISOString().slice(0,10) + '.json';
     a.click();
     URL.revokeObjectURL(a.href);
     showToast('Backup exportado.', true);
   });
-  $('importBtn').addEventListener('click', ()=> $('importFile').click());
-  $('importFile').addEventListener('change', async (e)=>{
-    const file = e.target.files[0];
+  $('importBtn').addEventListener('click', function(){ $('importFile').click(); });
+  $('importFile').addEventListener('change', async function(e){
+    var file = e.target.files[0];
     if(!file) return;
-    const text = await file.text();
+    var text = await file.text();
     try{
-      const data = JSON.parse(text);
-      if(data.settings){ settings = Object.assign(settings, data.settings); await saveSettings(); }
-      if(data.users){ users = data.users; await saveUsers(); }
-      if(data.orders){ orders = data.orders; await saveOrders(); }
-      if(data.reviews){ reviews = data.reviews; await saveReviews(); }
-      if(data.chat){ chat = data.chat; await saveChat(); }
-      if(data.contacts){ contacts = data.contacts; await saveContacts(); }
+      var data = JSON.parse(text);
+      if(data.settings){
+        settings = Object.assign(settings, data.settings);
+        if(!settings.config) settings.config = Object.assign({}, DEFAULT_CONFIG);
+        if(!settings.prices || !settings.prices.length) settings.prices = JSON.parse(JSON.stringify(DEFAULT_PRICES));
+        if(!settings.packages || !settings.packages.length) settings.packages = JSON.parse(JSON.stringify(DEFAULT_PACKAGES));
+        if(!settings.events || !settings.events.length) settings.events = JSON.parse(JSON.stringify(DEFAULT_EVENTS));
+        await saveSettings();
+      }
+      if(!USE_SUPABASE){
+        if(data.users){ users = data.users; await saveUsersLocal(); }
+        if(data.orders){ orders = data.orders; await saveOrdersLocal(); }
+        if(data.reviews){ reviews = data.reviews; await saveReviewsLocal(); }
+        if(data.chat){ chat = data.chat; await saveChatLocal(); }
+        if(data.contacts){ contacts = data.contacts; await saveContactsLocal(); }
+      } else {
+        if(data.orders && data.orders.length){
+          for(var i=0;i<data.orders.length;i++){
+            var o = data.orders[i];
+            if(!o.userId || !currentUser) continue;
+            await createOrderSupabase({ id:o.id, userId:o.userId, userName:o.userName||currentUser.name, items:o.items||[], total:o.total||0, status:o.status||'aguardando' });
+          }
+        }
+      }
       renderAdminAll(); renderShell(); renderEvents(); renderReviews(); renderRanking(); renderChat(); renderPackages();
       showToast('Backup restaurado com sucesso!', true);
     }catch(err){ showToast('Arquivo inválido.'); }
@@ -2145,27 +2390,27 @@
   /* ============================================================
      NAVEGAÇÃO
      ============================================================ */
-  document.querySelectorAll('[data-nav]').forEach(btn=>{
-    btn.addEventListener('click', (e)=>{
+  document.querySelectorAll('[data-nav]').forEach(function(btn){
+    btn.addEventListener('click', function(e){
       e.preventDefault();
-      const target = btn.getAttribute('data-nav');
-      const el = $(target);
+      var target = btn.getAttribute('data-nav');
+      var el = $(target);
       if(el){ el.scrollIntoView({behavior:'smooth', block:'start'}); }
-      document.querySelectorAll('.navlinks button').forEach(b=>b.classList.remove('active'));
-      document.querySelectorAll('.navlinks button[data-nav="'+target+'"]').forEach(b=>b.classList.add('active'));
+      document.querySelectorAll('.navlinks button').forEach(function(b){ b.classList.remove('active'); });
+      document.querySelectorAll('.navlinks button[data-nav="'+target+'"]').forEach(function(b){ b.classList.add('active'); });
     });
   });
-
-  /* ============================================================
-     CONTATO (via WhatsApp, sem formulário separado)
-     ============================================================ */
 
   /* ============================================================
      INIT
      ============================================================ */
   async function init(){
     await loadAll();
-    await restoreSession();
+    if(USE_SUPABASE){
+      subscribeChatRealtime();
+    } else {
+      setInterval(pollChat, 3500);
+    }
     updateAccountUI();
     activeSimCat = settings.prices[0]?.id || null;
     activePriceCat = settings.prices[0]?.id || null;
@@ -2175,12 +2420,11 @@
     renderPackages();
     renderReviews(); renderStarInput();
     renderEvents();
-    renderRanking();
+    await refreshRanking();
     renderChat();
     renderCart(); renderCartBadge();
     renderQuickChips();
     renderAdminStats();
-    setInterval(pollChat, 3500);
   }
   init();
 })();
