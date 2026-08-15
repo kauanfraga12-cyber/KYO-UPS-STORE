@@ -979,6 +979,11 @@
             </select>
           </div>
           <div class="field"><label>Link do grupo WhatsApp</label><input id="cfgWhats"></div>
+          <hr style="border:none; border-top:1px solid var(--border); margin:18px 0;">
+          <div style="font-weight:800; font-size:0.9rem; margin-bottom:10px;">Pagamento PIX</div>
+          <div class="field"><label>Chave PIX (CPF/CNPJ/email)</label><input id="cfgPixKey" placeholder="000.000.000-00" maxlength="40"></div>
+          <div class="field"><label>Access Token Mercado Pago (opcional)</label><input id="cfgMpToken" type="password" placeholder="TEST-xxxx ou APP_USR-xxxx" maxlength="120"></div>
+          <p style="font-size:0.75rem; color:var(--text-faint); margin-top:6px;">O Access Token também pode ficar seguro no Netlify (variável MP_ACCESS_TOKEN). Quando presente aqui, o site tenta usá-lo para criar o PIX automático.</p>
           <button class="btn btn-primary btn-sm" id="saveSettingsBtn">Salvar configurações</button>
           <hr style="border:none; border-top:1px solid var(--border); margin:22px 0;">
           <div class="field"><label>Trocar senha de acesso</label><input id="cfgNewPass" type="password" placeholder="Nova senha"></div>
@@ -2498,12 +2503,16 @@
     $('cfgTagline').value = settings.config.tagline;
     $('cfgStatus').value = settings.config.status;
     $('cfgWhats').value = settings.config.whats || WHATS_DEFAULT;
+    $('cfgPixKey').value = settings.config.pixKey || '';
+    $('cfgMpToken').value = settings.config.mpToken || '';
   }
   $('saveSettingsBtn').addEventListener('click', async function(){
     settings.config.shopName = $('cfgShopName').value.trim() || DEFAULT_CONFIG.shopName;
     settings.config.tagline = $('cfgTagline').value.trim() || DEFAULT_CONFIG.tagline;
     settings.config.status = $('cfgStatus').value;
     settings.config.whats = $('cfgWhats').value.trim() || WHATS_DEFAULT;
+    settings.config.pixKey = $('cfgPixKey').value.trim();
+    settings.config.mpToken = $('cfgMpToken').value.trim();
     await saveSettings();
     renderShell();
     showToast('Configurações salvas.', true);
