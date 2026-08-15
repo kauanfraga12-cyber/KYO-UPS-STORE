@@ -14,6 +14,6 @@
 // do banco de dados que você vai criar com o supabase.sql.
 // ============================================================
 window.SUPABASE_CONFIG = {
-  url: "COLE_A_SUPABASE_URL_AQUI",
-  anonKey: "COLE_A_SUPABASE_ANON_KEY_AQUI"
+  url: "https://ukhzidvkiydovbmjxywf.supabase.co/rest/v1/",
+  anonKey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVraHppZHZraXlkb3ZibWp4eXdmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY4MDI3OTUsImV4cCI6MjEwMjM3ODc5NX0.ZMDmp0IoQ5of55bOg1LK6F9EpOGHDGfVEEX8D_iesIk"
 };
