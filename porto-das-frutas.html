@@ -380,16 +380,23 @@
   .cart-total .val{font-family:var(--font-mono); font-size:1.5rem; font-weight:600; color:var(--gold); text-shadow:0 0 18px rgba(251,191,36,0.35);}
 
   /* ================= PACKAGES ================= */
+  @keyframes neonBorder{
+    0%,100%{border-color:var(--neon-pink); box-shadow:0 0 0 1px rgba(255,47,214,0.35), 0 18px 44px -16px rgba(255,47,214,0.4);}
+    50%{border-color:var(--neon-cyan); box-shadow:0 0 0 1px rgba(0,240,255,0.35), 0 18px 44px -16px rgba(0,240,255,0.4);}
+  }
   .pack-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(250px,1fr)); gap:18px;}
   .pack-card{
-    position:relative; background:linear-gradient(165deg,var(--surface),var(--bg-alt)); border:1px solid var(--border);
-    border-radius:var(--radius); padding:26px 22px; overflow:hidden; transition:transform .18s, border-color .18s, box-shadow .18s;
+    background:linear-gradient(160deg, rgba(124,92,255,0.10), rgba(255,47,214,0.08) 55%, rgba(0,240,255,0.08));
+    border:1px solid rgba(255,47,214,0.35); border-radius:var(--radius);
+    padding:22px; position:relative; transition:transform .2s, box-shadow .2s;
   }
-  .pack-card:hover{transform:translateY(-5px); border-color:var(--violet); box-shadow:0 18px 44px -16px rgba(167,139,250,0.4);}
-  .pack-card.featured{border-color:var(--gold); box-shadow:0 0 0 1px rgba(251,191,36,0.3), 0 18px 44px -16px rgba(251,191,36,0.35);}
+  .pack-card:hover{transform:translateY(-5px); animation:neonBorder 2.2s ease-in-out infinite;}
+  .pack-card.featured{border-color:var(--neon-cyan); box-shadow:0 0 0 1px rgba(0,240,255,0.35), 0 18px 44px -16px rgba(0,240,255,0.45);}
   .pack-card .pack-tag{
-    position:absolute; top:14px; right:-30px; transform:rotate(45deg); background:linear-gradient(120deg,var(--gold),var(--coral));
-    color:#2a1202; font-size:0.66rem; font-weight:800; padding:4px 34px; letter-spacing:0.08em; text-transform:uppercase; font-family:var(--font-mono);
+    position:absolute; top:-11px; right:14px; padding:4px 12px; border-radius:999px;
+    background:linear-gradient(120deg, var(--neon-pink), var(--neon-violet));
+    color:#fff; font-family:var(--font-mono); font-size:0.7rem; letter-spacing:0.08em;
+    box-shadow:var(--neon-glow-pink); text-transform:uppercase;
   }
   .pack-card .pack-icon{font-size:2.2rem; margin-bottom:12px;}
   .pack-card h4{font-size:1.15rem; margin-bottom:8px;}
@@ -398,7 +405,7 @@
   .pack-card li{display:flex; align-items:center; gap:8px; padding:4px 0;}
   .pack-card li::before{content:''; width:6px; height:6px; border-radius:50%; background:var(--teal); flex-shrink:0;}
   .pack-price{display:flex; align-items:baseline; justify-content:space-between; margin-top:16px; padding-top:14px; border-top:1px solid var(--border);}
-  .pack-price .now{font-family:var(--font-mono); font-size:1.4rem; color:var(--gold); font-weight:700;}
+  .pack-price .now{color:var(--neon-cyan); text-shadow:0 0 14px rgba(0,240,255,0.45);}
   .pack-price .was{font-family:var(--font-mono); font-size:0.8rem; color:var(--text-faint); text-decoration:line-through;}
 
   /* ================= PRICE LEDGER ================= */
