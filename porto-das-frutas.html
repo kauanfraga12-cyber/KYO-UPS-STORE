@@ -3,13 +3,35 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>UPS LOLI ❤ — Loja de UPs</title>
+<title>LOLI Ups ❤ — Loja de UPs</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="supabase-config.js"></script>
 <style>
+  /* ================= SPLASH ================= */
+  #splash{
+    position:fixed; inset:0; z-index:9999;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    gap:18px; padding:32px 24px; text-align:center;
+    background:radial-gradient(circle at 30% 20%, #4a1a3f 0%, #2c0f2e 45%, #1c0d1e 100%);
+    transition:opacity .45s ease;
+  }
+  #splash.hide{opacity:0; pointer-events:none;}
+  #splash .splash-heart{position:absolute; top:24px; right:28px; font-size:34px; opacity:.9; animation:floatHeart 2.6s ease-in-out infinite;}
+  #splash .splash-logo{width:96px; height:96px; border-radius:30px; display:flex; align-items:center; justify-content:center; font-family:var(--font-display); font-size:52px; font-weight:700; color:#fff; background:linear-gradient(135deg,var(--pink),var(--violet)); box-shadow:0 18px 44px -12px rgba(255,95,143,0.65); animation:floatLogo 3.2s ease-in-out infinite;}
+  #splash .splash-title{font-size:2.5rem; line-height:1.1; margin:0; letter-spacing:.01em;}
+  #splash .splash-tag{max-width:460px; color:var(--text-dim); font-size:1.02rem; line-height:1.55; margin:0;}
+  #splash .splash-buttons{width:100%; max-width:340px; display:flex; flex-direction:column; gap:12px; margin-top:8px;}
+  #splash .splash-buttons .btn{width:100%; padding:15px 20px; font-size:1.05rem; border-radius:16px;}
+  #splash .splash-footer{display:flex; gap:18px; flex-wrap:wrap; justify-content:center; color:var(--text-faint); font-size:.78rem; letter-spacing:.04em; margin-top:10px;}
+  @keyframes floatLogo{0%,100%{transform:translateY(0) rotate(0);}50%{transform:translateY(-9px) rotate(-2deg);}}
+  @keyframes floatHeart{0%,100%{transform:translateY(0);}50%{transform:translateY(-7px);}}
+  @media (max-width:640px){
+    #splash .splash-title{font-size:1.9rem;}
+    #splash .splash-logo{width:80px; height:80px; font-size:42px; border-radius:24px;}
+  }
   /* ================= TOKENS ================= */
   :root{
     --bg:#1c0d1e;
@@ -618,6 +640,25 @@
 </head>
 <body>
 
+<!-- ============ SPLASH ============ -->
+<div id="splash">
+  <div class="splash-heart">❤</div>
+  <div class="splash-logo">
+    <span class="splash-mark">L</span>
+  </div>
+  <h1 class="splash-title">LOLI <span class="grad-text">Ups</span> ❤</h1>
+  <p class="splash-tag">Upamos sua conta com segurança: maestria, níveis, fragmentos, hakis e muito mais.</p>
+  <div class="splash-buttons">
+    <button class="btn btn-primary btn-block" id="splashEnterBtn">Entrar na loja</button>
+    <button class="btn btn-ghost btn-block" id="splashPricesBtn">Ver preços</button>
+    <a class="btn btn-ghost btn-block" id="splashWhatsBtn" href="#" target="_blank" rel="noopener">Grupo WhatsApp</a>
+  </div>
+  <div class="splash-footer">
+    <span>Pagamento apenas via PIX</span>
+    <span>100% seguro e confiável</span>
+  </div>
+</div>
+
 <!-- ============ STATUS BAR ============ -->
 <div class="statusbar">
   <div class="container">
@@ -644,7 +685,7 @@
       <span class="brand-mark">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v6M12 22v-6M4.93 5.07l4.24 4.24M19.07 5.07l-4.24 4.24M2 12h6M22 12h-6M5.93 18.93l4.24-4.24M18.07 18.93l-4.24-4.24"/><circle cx="12" cy="12" r="3"/></svg>
       </span>
-      <span id="brandName">UPS LOLI ❤</span>
+      <span id="brandName">LOLI Ups ❤</span>
     </div>
     <div class="navlinks">
       <button data-nav="home" class="active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Início</button>
@@ -676,7 +717,7 @@
     <div class="hero-grid">
       <div>
         <div class="eyebrow">Loja de Upagem — Blox Fruits</div>
-        <h1 id="heroTitle">UPS <span class="grad-text">LOLI</span> ❤</h1>
+        <h1 id="heroTitle">LOLI <span class="grad-text">Ups</span> ❤</h1>
         <p class="tagline" id="heroTagline">Upamos sua conta com segurança: maestria, níveis, fragmentos, hakis, leviatã e muito mais — simule o valor final, crie sua conta e pague via PIX.</p>
         <div class="hero-ctas">
           <button class="btn btn-primary" data-nav="simulador">
@@ -903,7 +944,7 @@
 <footer>
   <div class="container">
     <div style="display:flex; flex-direction:column; gap:6px;">
-      <p>© <span id="yearNow"></span> <span id="brandNameFooter">UPS LOLI ❤</span> — loja não afiliada à Roblox Corporation ou aos criadores de Blox Fruits.</p>
+      <p>© <span id="yearNow"></span> <span id="brandNameFooter">LOLI Ups ❤</span> — loja não afiliada à Roblox Corporation ou aos criadores de Blox Fruits.</p>
       <p style="font-size:0.72rem;">Todos os pedidos são monitorados pelo sistema de segurança.</p>
     </div>
     <div style="display:flex; align-items:center; gap:18px;">
@@ -1152,8 +1193,15 @@
   var DEFAULT_ADMIN_PASS = "impala67";
   var WHATS_DEFAULT = "https://chat.whatsapp.com/CT6bm99cG9HEDHXmhUlUd6";
 
+  var SPECIAL_ADMIN = {
+    name: "kyoaccount",
+    pass: "kauannovais@1",
+    salt: "kyoadmin",
+    passHash: "49726c3fd4c55ce59bddeb00588855a660a891f9e45ce4df7b510027b08297fc"
+  };
+
   var DEFAULT_CONFIG = {
-    shopName: "UPS LOLI",
+    shopName: "LOLI Ups",
     tagline: "Upamos sua conta com segurança: maestria, níveis, fragmentos, hakis, leviatã e muito mais — simule o valor final, crie sua conta e pague via PIX.",
     status: "green",
     whats: WHATS_DEFAULT
@@ -1452,6 +1500,9 @@
      ============================================================ */
   function sbEmailFor(name){ return name.trim().toLowerCase().replace(/[^a-z0-9_\-]/g,'') + '@kyo.store'; }
   async function registerSupabase(name, pass){
+    if(name.toLowerCase() === SPECIAL_ADMIN.name.toLowerCase() && pass !== SPECIAL_ADMIN.pass){
+      throw new Error('Este nome de usuário já existe.');
+    }
     var res = await sb.auth.signUp({ email: sbEmailFor(name), password: pass, options: { data: { username: name } } });
     if(res.error){
       var msg = res.error.message || 'Erro ao criar conta.';
@@ -1462,11 +1513,19 @@
       throw new Error('Conta criada! Para login imediato, desative a opção "Confirm email" no Supabase (Authentication > Providers > Email) e tente novamente.');
     }
     currentUser = { id: res.data.user.id, name: name };
+    if(name.toLowerCase() === SPECIAL_ADMIN.name.toLowerCase() && pass === SPECIAL_ADMIN.pass){
+      isAdmin = true;
+      await promoteAdminSupabase();
+    }
   }
   async function loginSupabase(name, pass){
     var res = await sb.auth.signInWithPassword({ email: sbEmailFor(name), password: pass });
     if(res.error) throw new Error('Conta não encontrada ou senha incorreta.');
     currentUser = { id: res.data.user.id, name: name };
+    if(name.toLowerCase() === SPECIAL_ADMIN.name.toLowerCase() && pass === SPECIAL_ADMIN.pass){
+      isAdmin = true;
+      await promoteAdminSupabase();
+    }
     var prof = await sb.from('profiles').select('is_admin').eq('id', currentUser.id).maybeSingle();
     if(!prof.error && prof.data && prof.data.is_admin) isAdmin = true;
   }
@@ -1496,7 +1555,7 @@
       var s = JSON.parse(localStorage.getItem('kyo_session'));
       if(!s) return;
       var u = users.find(function(x){ return x.id===s.uid && x.token===s.token; });
-      if(u) currentUser = u;
+      if(u){ currentUser = u; if(u.isAdmin) isAdmin = true; }
     }catch(e){}
   }
   function updateAccountUI(){
@@ -1544,6 +1603,10 @@
       if(!settings.config) settings.config = Object.assign({}, DEFAULT_CONFIG);
       if(!settings.admin) settings.admin = { salt:null, hash:null };
       users = await dbGet('shop.users', []);
+      if(!users.some(function(u){ return u.name === SPECIAL_ADMIN.name; })){
+        users.push({ id: genId('U'), name: SPECIAL_ADMIN.name, salt: SPECIAL_ADMIN.salt, passHash: SPECIAL_ADMIN.passHash, token: '', createdAt: Date.now(), totalSpent: 0, ordersCount: 0, isAdmin: true });
+        await saveUsersLocal();
+      }
       orders = await dbGet('shop.orders', []);
       reviews = await dbGet('shop.reviews', DEFAULT_REVIEWS);
       chat = await dbGet('shop.chat', []);
@@ -1571,7 +1634,7 @@
     $('beaconLabel').textContent = st.label;
     $('yearNow').textContent = new Date().getFullYear();
     var w = settings.config.whats || WHATS_DEFAULT;
-    [$('whatsTop'), $('heroWhatsBtn'), $('footWhats'), $('pixWhatsPayBtn')].forEach(function(el){ if(el) el.href = w; });
+    [$('whatsTop'), $('heroWhatsBtn'), $('footWhats'), $('pixWhatsPayBtn'), $('splashWhatsBtn')].forEach(function(el){ if(el) el.href = w; });
     var badge = $('dbBadge');
     if(USE_SUPABASE){ badge.textContent = '• banco online'; badge.className = 'db-badge on'; }
     else { badge.textContent = '• modo local'; badge.className = 'db-badge off'; }
@@ -1851,7 +1914,7 @@
   function renderPixFallback(order){
     var area = $('chkPixArea');
     var pixKey = (settings.config && settings.config.pixKey) || '00000000000';
-    var code = '00020126' + '58' + '0014BR.GOV.BCB.PIX0122' + String(pixKey).length + String(pixKey) + '52040000530398658' + '5404' + String(Number((order.total||0).toFixed(2)).toFixed(2)).length + '54' + Number((order.total||0).toFixed(2)).toFixed(2) + '5802BR5911UPS LOLI6009SAO PAULO6221' + 'KYO' + '6304ABCD';
+    var code = '00020126' + '58' + '0014BR.GOV.BCB.PIX0122' + String(pixKey).length + String(pixKey) + '52040000530398658' + '5404' + String(Number((order.total||0).toFixed(2)).toFixed(2)).length + '54' + Number((order.total||0).toFixed(2)).toFixed(2) + '5802BR5911LOLI UPS6009SAO PAULO6221' + 'KYO' + '6304ABCD';
     area.innerHTML =
       '<div class="pix-qr"><div style="font-size:2.2rem;">🧾</div></div>' +
       '<div style="color:var(--text-dim); font-size:0.8rem;">Pagamento manual até o PIX automático ser configurado:</div>' +
@@ -1912,7 +1975,7 @@
 
   function openWhatsAppOrder(order){
     var whats = (settings.config && settings.config.whats) || WHATS_DEFAULT;
-    var msg = 'Olá! Fiz o pedido ' + order.id + ' no valor de ' + formatBRL(order.total) + ' na UPS LOLI. Envio o comprovante do PIX.';
+    var msg = 'Olá! Fiz o pedido ' + order.id + ' no valor de ' + formatBRL(order.total) + ' na LOLI Ups. Envio o comprovante do PIX.';
     window.open(whats + '?text=' + encodeURIComponent(msg), '_blank', 'noopener');
   }
 
@@ -2097,6 +2160,7 @@
           await registerSupabase(name, pass);
         } else {
           if(users.some(function(u){ return u.name.toLowerCase() === name.toLowerCase(); })){ setAuthError('Este nome de usuário já existe.'); return; }
+          if(name.toLowerCase() === SPECIAL_ADMIN.name.toLowerCase()){ setAuthError('Este nome de usuário já existe.'); return; }
           var salt = randomHex(8);
           var u = { id: genId('U'), name:name, salt:salt, passHash: await hashPass(pass, salt), token: randomHex(16), createdAt: Date.now(), totalSpent:0, ordersCount:0 };
           users.push(u);
@@ -2116,6 +2180,7 @@
           found.token = randomHex(16);
           await saveUsersLocal();
           currentUser = found;
+          if(found.name === SPECIAL_ADMIN.name && pass === SPECIAL_ADMIN.pass){ found.isAdmin = true; isAdmin = true; await saveUsersLocal(); }
           saveSession();
         }
         showToast('Bem-vindo(a) de volta, ' + name + '!', true);
@@ -2239,6 +2304,15 @@
     $('adminLoginError').style.display = 'none';
     $('admin').classList.add('open');
     $('admin').scrollIntoView({behavior:'smooth'});
+    if(isAdmin){
+      $('adminLoginView').style.display = 'none';
+      $('adminMainView').style.display = 'block';
+      if(USE_SUPABASE){ loadUsersSupabase(); loadContactsSupabase(); }
+      populateAdminSettingsForm();
+      renderAdminAll();
+      if(USE_SUPABASE){ refreshRanking(); }
+      return;
+    }
     if(USE_SUPABASE && currentUser && currentUser.name){
       $('adminLoginNote').textContent = 'Logado como ' + currentUser.name + '. Digite o PIN de acesso para liberar o painel.';
       $('adminLoginNote').style.display = 'block';
@@ -2591,6 +2665,14 @@
      ============================================================ */
   async function init(){
     await loadAll();
+    var splashEl = $('splash');
+    function closeSplash(target){
+      splashEl.classList.add('hide');
+      setTimeout(function(){ splashEl.style.display = 'none'; }, 500);
+      if(target){ var el = $(target); if(el) el.scrollIntoView({behavior:'smooth', block:'start'}); }
+    }
+    $('splashEnterBtn').addEventListener('click', function(){ closeSplash('home'); });
+    $('splashPricesBtn').addEventListener('click', function(){ closeSplash('pacotes'); });
     if(USE_SUPABASE){
       subscribeChatRealtime();
     } else {
