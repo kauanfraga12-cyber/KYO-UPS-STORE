@@ -1384,6 +1384,21 @@
       total:390.00, value:490.00 }
   ];
 
+  var DEFAULT_COINS = [
+    { id:"coin-robux100", icon:"🪙", name:"100 Robux", desc:"Crédito de 100 Robux direto na sua conta.", qty:100, price:7.00 },
+    { id:"coin-robux400", icon:"🪙", name:"400 Robux", desc:"Crédito de 400 Robux com desconto.", qty:400, price:24.00 },
+    { id:"coin-frag1k", icon:"💎", name:"1.000 Fragmentos", desc:"Fragmentos para desbloquear raças e habilidades.", qty:1000, price:15.00 },
+    { id:"coin-frag5k", icon:"💎", name:"5.000 Fragmentos", desc:"Pacote grande de fragmentos com melhor preço.", qty:5000, price:55.00 },
+    { id:"coin-belly1b", icon:"💰", name:"1 Bilhão de Bellys", desc:"Bellys para comprar tudo o que precisar.", qty:1000000000, price:35.00 },
+    { id:"coin-gemas", icon:"💠", name:"1.000 Gemas", desc:"Gemas para itens exclusivos.", qty:1000, price:20.00 }
+  ];
+
+  var DEFAULT_PROOFS = [
+    { id:"pr1", img:"https://picsum.photos/seed/loli1/400/260", title:"Maestria 500", desc:"Entrega concluída em 1 dia para Kaito_br.", date:"2026-08-10", status:"concluido" },
+    { id:"pr2", img:"https://picsum.photos/seed/loli2/400/260", title:"Pack Lendário", desc:"Leviatã + scrolls entregues para FrutasLord.", date:"2026-08-08", status:"concluido" },
+    { id:"pr3", img:"https://picsum.photos/seed/loli3/400/260", title:"Nível Máximo", desc:"Nível 2600+ entregue para MarujoX.", date:"2026-08-05", status:"concluido" }
+  ];
+
   var DEFAULT_EVENTS = [
     { id:"ev1", title:"Sorteio de upagem grátis", desc:"Todo pedido acima de R$ 50 concorre a uma upagem grátis no valor de até R$ 30. Sorteio no grupo do WhatsApp.", date:"2026-08-22", status:"acontecer" },
     { id:"ev2", title:"Semana do Leviatã", desc:"20% de desconto em todos os serviços de Leviatã durante a semana inteira.", date:"2026-08-15", status:"ativo" },
@@ -1405,7 +1420,7 @@
   /* ============================================================
      ESTADO
      ============================================================ */
-  var settings = { config:Object.assign({}, DEFAULT_CONFIG), prices:JSON.parse(JSON.stringify(DEFAULT_PRICES)), packages:JSON.parse(JSON.stringify(DEFAULT_PACKAGES)), events:JSON.parse(JSON.stringify(DEFAULT_EVENTS)), admin:{ salt:null, hash:null } };
+  var settings = { config:Object.assign({}, DEFAULT_CONFIG), prices:JSON.parse(JSON.stringify(DEFAULT_PRICES)), packages:JSON.parse(JSON.stringify(DEFAULT_PACKAGES)), coins:JSON.parse(JSON.stringify(DEFAULT_COINS)), proofs:JSON.parse(JSON.stringify(DEFAULT_PROOFS)), events:JSON.parse(JSON.stringify(DEFAULT_EVENTS)), admin:{ salt:null, hash:null } };
   var users = [];
   var orders = [];
   var reviews = JSON.parse(JSON.stringify(DEFAULT_REVIEWS));
@@ -1448,7 +1463,7 @@
      PERSISTÊNCIA — SUPABASE
      ============================================================ */
   function sbConfigData(){
-    return { config: settings.config, prices: settings.prices, packages: settings.packages, events: settings.events, admin: settings.admin };
+    return { config: settings.config, prices: settings.prices, packages: settings.packages, events: settings.events, coins: settings.coins, proofs: settings.proofs, admin: settings.admin };
   }
   async function loadConfigSupabase(){
     try{
@@ -1461,6 +1476,8 @@
           prices: (d.prices && d.prices.length) ? d.prices : JSON.parse(JSON.stringify(DEFAULT_PRICES)),
           packages: (d.packages && d.packages.length) ? d.packages : JSON.parse(JSON.stringify(DEFAULT_PACKAGES)),
           events: (d.events && d.events.length) ? d.events : JSON.parse(JSON.stringify(DEFAULT_EVENTS)),
+          coins: (d.coins && d.coins.length) ? d.coins : JSON.parse(JSON.stringify(DEFAULT_COINS)),
+          proofs: (d.proofs && d.proofs.length) ? d.proofs : JSON.parse(JSON.stringify(DEFAULT_PROOFS)),
           admin: d.admin || { salt: null, hash: null }
         };
       }
@@ -1680,6 +1697,8 @@
       if(!settings.prices || settings.prices.length===0) settings.prices = JSON.parse(JSON.stringify(DEFAULT_PRICES));
       if(!settings.packages || settings.packages.length===0) settings.packages = JSON.parse(JSON.stringify(DEFAULT_PACKAGES));
       if(!settings.events || settings.events.length===0) settings.events = JSON.parse(JSON.stringify(DEFAULT_EVENTS));
+      if(!settings.coins || settings.coins.length===0) settings.coins = JSON.parse(JSON.stringify(DEFAULT_COINS));
+      if(!settings.proofs || settings.proofs.length===0) settings.proofs = JSON.parse(JSON.stringify(DEFAULT_PROOFS));
       if(!settings.config) settings.config = Object.assign({}, DEFAULT_CONFIG);
       if(!settings.admin) settings.admin = { salt:null, hash:null };
       users = await dbGet('shop.users', []);
