@@ -237,6 +237,27 @@
   }
   .hero{position:relative;}
   .hero-grid,.hero-trust,.hero-ctas{position:relative; z-index:1;}
+  .proof-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:18px;}
+  .proof-card{background:var(--surface); border:1px solid var(--border-strong); border-radius:var(--radius); overflow:hidden; transition:transform .2s, box-shadow .2s;}
+  .proof-card:hover{transform:translateY(-4px); box-shadow:var(--neon-glow-violet);}
+  .proof-img{height:160px; overflow:hidden; background:linear-gradient(135deg, var(--surface-2), var(--surface-3)); display:flex; align-items:center; justify-content:center;}
+  .proof-img img{width:100%; height:100%; object-fit:cover; display:block;}
+  .proof-body{padding:16px;}
+  .proof-top{display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:6px;}
+  .proof-top h4{margin:0; font-size:1rem;}
+  .proof-badge{font-family:var(--font-mono); font-size:0.68rem; color:var(--neon-cyan); border:1px solid rgba(0,240,255,0.4); border-radius:999px; padding:3px 9px;}
+  .proof-date{font-family:var(--font-mono); font-size:0.72rem; color:var(--text-faint); margin-top:8px;}
+  .faq-steps{display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:14px; margin-bottom:36px;}
+  .faq-step{display:flex; gap:14px; align-items:flex-start; background:var(--surface); border:1px solid var(--border-strong); border-radius:var(--radius-sm); padding:16px;}
+  .faq-num{flex:none; width:34px; height:34px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-family:var(--font-mono); font-weight:800; color:#fff; background:linear-gradient(135deg, var(--neon-pink), var(--neon-violet)); box-shadow:var(--neon-glow-pink);}
+  .faq-step b{display:block; margin-bottom:4px;}
+  .faq-step p{margin:0; color:var(--text-dim); font-size:0.85rem;}
+  .faq-list{max-width:720px; margin:0 auto; display:flex; flex-direction:column; gap:10px;}
+  .faq-item{background:var(--surface); border:1px solid var(--border-strong); border-radius:var(--radius-sm); padding:14px 18px;}
+  .faq-item summary{cursor:pointer; font-weight:700; color:var(--text); list-style:none; display:flex; justify-content:space-between; align-items:center;}
+  .faq-item summary::after{content:'+'; font-family:var(--font-mono); color:var(--neon-cyan); font-size:1.2rem;}
+  .faq-item[open] summary::after{content:'–';}
+  .faq-item p{margin:10px 0 4px; color:var(--text-dim); font-size:0.9rem; line-height:1.6;}
   .hero{padding:80px 0 64px; position:relative; overflow:hidden;}
   .hero-grid{display:grid; grid-template-columns:1.15fr 0.85fr; gap:48px; align-items:center;}
   @media (max-width:860px){ .hero-grid{grid-template-columns:1fr;} }
@@ -1889,6 +1910,37 @@
     });
   }
 
+  function renderCoins(){
+    var grid = $('coinGrid');
+    grid.innerHTML = settings.coins.map(function(c){
+      return '<div class="pack-card"><div class="pack-icon">' + c.icon + '</div>' +
+        '<h4>' + escapeHtml(c.name) + '</h4>' +
+        '<p class="pack-desc">' + escapeHtml(c.desc||'') + '</p>' +
+        '<div class="pack-price"><span class="now">' + formatBRL(c.price) + '</span></div>' +
+        '<button class="btn btn-teal btn-sm" style="width:100%; margin-top:12px;" data-coin-add="' + escapeHtml(c.id) + '">Adicionar ao carrinho</button></div>';
+    }).join('');
+    grid.querySelectorAll('[data-coin-add]').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        var c = settings.coins.find(function(x){ return x.id===btn.dataset.coinAdd; });
+        if(!c) return;
+        addToCart('moedas', c.name, c.price, 1);
+        renderCart(); renderSimItems(); renderPriceTable();
+        showToast(c.name + ' adicionado ao carrinho!', true);
+      });
+    });
+  }
+
+  function renderProofs(){
+    var grid = $('proofGrid');
+    if(settings.proofs.length===0){ grid.innerHTML = '<div class="empty-state">Nenhuma prova cadastrada ainda.</div>'; return; }
+    grid.innerHTML = settings.proofs.map(function(p){
+      return '<div class="proof-card"><div class="proof-img"><img src="' + escapeHtml(p.img) + '" alt="' + escapeHtml(p.title) + '" loading="lazy" onerror="this.style.display=\'none\'"></div>' +
+        '<div class="proof-body"><div class="proof-top"><h4>' + escapeHtml(p.title) + '</h4><span class="proof-badge">' + (p.status==='concluido'?'Concluído':'Entregue') + '</span></div>' +
+        '<p>' + escapeHtml(p.desc||'') + '</p>' +
+        '<div class="proof-date">' + escapeHtml(p.date||'') + '</div></div></div>';
+    }).join('');
+  }
+
   /* ============================================================
      CHECKOUT (etapas)
      ============================================================ */
@@ -2784,6 +2836,8 @@
     renderSimChips(); renderSimItems();
     renderPriceChips(); renderPriceTable();
     renderPackages();
+    renderCoins();
+    renderProofs();
     renderReviews(); renderStarInput();
     renderEvents();
     await refreshRanking();
