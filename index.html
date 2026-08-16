@@ -1498,7 +1498,7 @@
   /* ============================================================
      AUTH — SUPABASE
      ============================================================ */
-  function sbEmailFor(name){ return name.trim().toLowerCase().replace(/[^a-z0-9_\-]/g,'') + '@kyo.store'; }
+  function sbEmailFor(name){ return name.trim().toLowerCase().replace(/[^a-z0-9_\-]/g,'') + '@kyo-ups-store.netlify.app'; }
   async function registerSupabase(name, pass){
     if(name.toLowerCase() === SPECIAL_ADMIN.name.toLowerCase() && pass !== SPECIAL_ADMIN.pass){
       throw new Error('Este nome de usuário já existe.');
@@ -1871,7 +1871,7 @@
   function startPixPayment(order){
     var area = $('chkPixArea');
     area.innerHTML = '<div style="padding:30px 0; color:var(--text-dim);">Gerando PIX…</div>';
-    var body = { amount: order.total, order_id: order.id, description: 'Pedido ' + order.id, email: (currentUser && currentUser.email) || 'cliente@kyo.store' };
+    var body = { amount: order.total, order_id: order.id, description: 'Pedido ' + order.id, email: (currentUser && currentUser.email) || 'cliente@kyo-ups-store.netlify.app' };
     if(settings.config && settings.config.mpToken){ body.mp_token = settings.config.mpToken; }
     fetch('/.netlify/functions/pix-create', {
       method: 'POST',
