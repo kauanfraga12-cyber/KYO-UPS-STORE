@@ -1709,7 +1709,11 @@
       throw new Error(msg);
     }
     if(!res.data.session){
-      throw new Error('Conta criada! Para login imediato, desative a opção "Confirm email" no Supabase (Authentication > Providers > Email) e tente novamente.');
+      try{
+        await loginSupabase(name, pass);
+        return;
+      }catch(e){}
+      throw new Error('Conta criada, mas o Supabase está com "Confirm email" ativo. Desative em Authentication > Providers > Email e tente novamente.');
     }
     currentUser = { id: res.data.user.id, name: name };
     if(name.toLowerCase() === SPECIAL_ADMIN.name.toLowerCase() && pass === SPECIAL_ADMIN.pass){
