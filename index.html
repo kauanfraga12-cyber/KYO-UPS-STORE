@@ -262,7 +262,12 @@
   .hero-grid{display:grid; grid-template-columns:1.15fr 0.85fr; gap:48px; align-items:center;}
   @media (max-width:860px){ .hero-grid{grid-template-columns:1fr;} }
   .hero h1{font-size:clamp(2.6rem, 6vw, 4.2rem); line-height:1.06; text-shadow:0 2px 24px rgba(0,0,0,0.45);}
-  .hero h1 .grad-text{animation:neonPulse 2.6s ease-in-out infinite;}
+  .hero h1 .grad-text{background-size:200% 200%; animation:neonPulse 2.6s ease-in-out infinite, gradShift 5s ease-in-out infinite;}
+  @keyframes gradShift{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}
+  .hero-particle{position:absolute; bottom:-20px; font-size:1.3rem; opacity:0; animation:floatUp linear infinite; pointer-events:none; z-index:0;}
+  @keyframes floatUp{0%{opacity:0; transform:translateY(0) rotate(0)}15%{opacity:.55}85%{opacity:.4}100%{opacity:0; transform:translateY(-560px) rotate(35deg)}}
+  .feature-card{transition:transform .22s ease, box-shadow .22s ease, border-color .22s ease;}
+  .feature-card:hover{transform:translateY(-5px); box-shadow:0 16px 34px -12px rgba(150,120,255,.55); border-color:var(--violet);}
   .hero p.tagline{font-size:1.06rem; color:var(--text-dim); max-width:46ch; margin-top:18px;}
   .hero-ctas{display:flex; gap:12px; margin-top:30px; flex-wrap:wrap;}
   .hero-trust{display:flex; gap:22px; flex-wrap:wrap; margin-top:30px; font-family:var(--font-mono); font-size:0.78rem; color:var(--text-faint);}
@@ -787,6 +792,11 @@
 <section id="home" style="padding-top:0;">
   <div class="neon-grid-bg"></div>
   <div class="container hero">
+    <span class="hero-particle" style="left:8%; animation-duration:9s;">💖</span>
+    <span class="hero-particle" style="left:22%; animation-duration:12s; animation-delay:2s;">✨</span>
+    <span class="hero-particle" style="left:47%; animation-duration:10s; animation-delay:1s;">🌸</span>
+    <span class="hero-particle" style="left:70%; animation-duration:13s; animation-delay:3s;">💫</span>
+    <span class="hero-particle" style="left:88%; animation-duration:11s; animation-delay:0.5s;">💖</span>
     <div class="hero-grid">
       <div>
         <div class="eyebrow">Loja de Upagem — Blox Fruits</div>
