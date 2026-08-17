@@ -685,6 +685,25 @@
 
   .hidden{display:none !important;}
   .section-bg{background:rgba(11,18,32,0.55); border-top:1px solid var(--border); border-bottom:1px solid var(--border);}
+
+  /* ---- MASCOTE LOLI ---- */
+  #mascot{position:fixed; right:18px; bottom:18px; z-index:9999; cursor:pointer;}
+  #mascot .mascot-img{width:104px; height:104px; border-radius:50%; object-fit:cover; border:3px solid var(--violet); box-shadow:0 0 26px -4px rgba(150,120,255,.9); animation:mascotFloat 3.4s ease-in-out infinite; background:#fff;}
+  @keyframes mascotFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+  #mascotBubble{position:absolute; bottom:118px; right:0; max-width:230px; background:#fff; color:#3a2a55; font-size:.82rem; padding:9px 12px; border-radius:14px 14px 4px 14px; box-shadow:0 10px 26px -8px rgba(0,0,0,.45); border:2px solid var(--violet); display:none; line-height:1.4;}
+  #mascotBubble::after{content:''; position:absolute; top:100%; right:22px; border:7px solid transparent; border-top-color:var(--violet);}
+  #mascotHearts{position:absolute; bottom:100px; right:14px; font-size:1.15rem; opacity:0; pointer-events:none;}
+  #mascotHearts.pop{animation:mascotHeartsUp .9s ease-out;}
+  @keyframes mascotHeartsUp{0%{opacity:0; transform:translateY(0) scale(.6)}30%{opacity:1}100%{opacity:0; transform:translateY(-36px) scale(1.2)}}
+  #mascot.jump .mascot-img{animation:mascotJump .45s ease-in-out 2;}
+  @keyframes mascotJump{0%,100%{transform:translateY(0)}50%{transform:translateY(-18px)}}
+  #mascot.wave .mascot-img{animation:mascotWave .7s ease-in-out;}
+  @keyframes mascotWave{0%,100%{transform:rotate(0)}25%{transform:rotate(-12deg)}75%{transform:rotate(10deg)}}
+  #mascot.sad .mascot-img{animation:mascotSad .8s ease-in-out;}
+  @keyframes mascotSad{0%,100%{transform:translateY(0) rotate(0)}40%{transform:translateY(4px) rotate(-6deg)}}
+  #mascot.heart .mascot-img{animation:mascotHeart .6s ease-in-out;}
+  @keyframes mascotHeart{0%,100%{transform:scale(1)}50%{transform:scale(1.18)}}
+  @media (max-width:600px){ #mascot .mascot-img{width:80px; height:80px;} #mascotBubble{max-width:190px; font-size:.75rem;} }
 </style>
 </head>
 <body>
@@ -1862,6 +1881,7 @@
     if(found) found.qty += qty;
     else cart.push({ catId:catId, catLabel: cat ? cat.label : catId, icon: cat ? cat.icon : '📦', name:name, price:price, qty:qty });
     renderCartBadge();
+    mascotReact('cart');
   }
   function removeFromCart(catId, name){
     var found = cart.find(function(c){ return c.catId===catId && c.name===name; });
@@ -2111,6 +2131,7 @@
     if(isAdmin) renderAdminAll();
     showChkStep(3);
     startPixPayment(order);
+    mascotReact('buy');
   });
   $('chkBack2').addEventListener('click', function(){ showChkStep(2); });
   $('chkDoneClose').addEventListener('click', closeCheckoutModal);
@@ -2396,7 +2417,7 @@
   $('authTabLogin').addEventListener('click', function(){ showAuthView('login'); });
   $('authTabRegister').addEventListener('click', function(){ showAuthView('register'); });
 
-  function setAuthError(msg){ var el=$('authError'); el.textContent = msg; el.style.display = 'block'; }
+  function setAuthError(msg){ var el=$('authError'); el.textContent = msg; el.style.display = 'block'; mascotReact('error'); }
 
   $('authSubmitBtn').addEventListener('click', async function(){
     var name = $('authName').value.trim();
@@ -3035,6 +3056,48 @@
   });
 
   /* ============================================================
+     MASCOTE LOLI
+     ============================================================ */
+  var MASCOT_PHRASES = [
+    'Oii, eu sou a LOLI-chan! 💕',
+    'Escolheu bem! ✨',
+    'Espero que goste da lojinha! 🌸',
+    'Pode me clicar sempre que quiser!',
+    'Pixinho aprovado = felicidade 💖'
+  ];
+  var mascotTimer = null;
+  function mascotSay(text, cls){
+    var b = $('mascotBubble');
+    b.textContent = text;
+    b.style.display = 'block';
+    var m = $('mascot');
+    m.className = cls ? cls : '';
+    clearTimeout(mascotTimer);
+    mascotTimer = setTimeout(function(){
+      b.style.display = 'none';
+      m.className = '';
+    }, 3200);
+  }
+  function mascotHeartsPop(){
+    var h = $('mascotHearts');
+    h.classList.remove('pop');
+    void h.offsetWidth;
+    h.classList.add('pop');
+  }
+  function mascotReact(kind){
+    if(kind === 'cart'){ mascotSay('Adicionei ao carrinho! 💕', 'jump'); }
+    else if(kind === 'buy'){ mascotSay('Pedido confirmado! 💖', 'heart'); mascotHeartsPop(); }
+    else if(kind === 'error'){ mascotSay('Ops! Deu um errozinho 🥺', 'sad'); }
+    else if(kind === 'click'){
+      var i = Math.floor(Math.random()*MASCOT_PHRASES.length);
+      mascotSay(MASCOT_PHRASES[i], 'wave');
+      mascotHeartsPop();
+    }
+    else { mascotSay('Bem-vindo(a) à LOLI Ups! 🌸', 'wave'); }
+  }
+  $('mascot').addEventListener('click', function(){ mascotReact('click'); });
+
+  /* ============================================================
      NAVEGAÇÃO
      ============================================================ */
   document.querySelectorAll('[data-nav]').forEach(function(btn){
@@ -3084,9 +3147,17 @@
     renderCart(); renderCartBadge();
     renderQuickChips();
     renderAdminStats();
+    mascotReact('welcome');
   }
   init();
 })();
 </script>
+
+<!-- ============ MASCOTE LOLI ============ -->
+<div id="mascot" title="LOLI-chan">
+  <div id="mascotBubble"></div>
+  <img class="mascot-img" src="assets/mascot.jpg" alt="Mascote LOLI-chan">
+  <div id="mascotHearts">💕</div>
+</div>
 </body>
 </html>
