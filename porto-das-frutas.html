@@ -1096,6 +1096,8 @@
         <button data-panel="panelEvents">Eventos</button>
         <button data-panel="panelMessages">Mensagens</button>
         <button data-panel="panelEditor">Editor de Preços</button>
+        <button data-panel="panelCoins">Moedas</button>
+        <button data-panel="panelProofs">Provas</button>
         <button data-panel="panelSettings">Configurações</button>
       </div>
 
@@ -1109,6 +1111,8 @@
         <div id="editorCategories"></div>
         <button class="btn btn-ghost btn-sm" id="addCategoryBtn">+ Nova categoria</button>
       </div>
+      <div class="admin-panel" id="panelCoins"><div id="coinsListAdmin"></div></div>
+      <div class="admin-panel" id="panelProofs"><div id="proofsListAdmin"></div></div>
       <div class="admin-panel" id="panelSettings">
         <div class="form-card" style="max-width:520px;">
           <div class="field"><label>Nome da loja</label><input id="cfgShopName"></div>
@@ -2515,7 +2519,7 @@
   });
 
   function renderAdminAll(){
-    renderAdminStats(); renderAdminOrders(); renderAdminUsers(); renderAdminReviews(); renderAdminEvents(); renderAdminMessages(); renderAdminEditor();
+    renderAdminStats(); renderAdminOrders(); renderAdminUsers(); renderAdminReviews(); renderAdminEvents(); renderAdminMessages(); renderAdminEditor(); renderAdminCoins(); renderAdminProofs();
   }
   function renderAdminStats(){
     $('statUsers').textContent = users.length;
@@ -2644,6 +2648,72 @@
         showToast('Mensagem removida.');
       });
     });
+  }
+  function renderAdminCoins(){
+    var wrap = $('coinsListAdmin');
+    wrap.innerHTML = settings.coins.map(function(c){
+      return '<div class="row-card"><div class="row-top"><div class="rid">' + escapeHtml(c.id) + '</div>' +
+        '<button class="btn btn-danger-outline btn-sm" data-cact="delete" data-cid="' + escapeHtml(c.id) + '">Excluir</button></div>' +
+        '<div class="field-row"><div class="field"><label>Nome</label><input value="' + escapeHtml(c.name) + '" data-cfield="name" data-cid="' + escapeHtml(c.id) + '"></div>' +
+        '<div class="field"><label>Preço (R$)</label><input type="number" step="0.01" value="' + c.price + '" data-cfield="price" data-cid="' + escapeHtml(c.id) + '"></div></div>' +
+        '<div class="field" style="margin:0;"><label>Descrição</label><textarea data-cfield="desc" data-cid="' + escapeHtml(c.id) + '">' + escapeHtml(c.desc) + '</textarea></div></div>';
+    }).join('');
+    wrap.querySelectorAll('[data-cfield]').forEach(function(inp){
+      inp.addEventListener('change', async function(e){
+        var c = settings.coins.find(function(x){ return x.id===inp.dataset.cid; });
+        if(c){
+          c[inp.dataset.cfield] = inp.dataset.cfield==='price' ? Number(e.target.value) : e.target.value;
+          await saveSettings(); renderCoins();
+        }
+      });
+    });
+    wrap.querySelectorAll('[data-cact="delete"]').forEach(function(b){
+      b.addEventListener('click', async function(){
+        settings.coins = settings.coins.filter(function(x){ return x.id!==b.dataset.cid; });
+        await saveSettings(); renderAdminCoins(); renderCoins();
+        showToast('Moeda removida.');
+      });
+    });
+    var addBtn = document.createElement('button');
+    addBtn.className = 'btn btn-ghost btn-sm';
+    addBtn.textContent = '+ Nova moeda';
+    addBtn.addEventListener('click', async function(){
+      settings.coins.unshift({ id: genId('coin').toLowerCase(), icon:'🪙', name:'Nova moeda', desc:'Descrição da moeda', qty:1, price:10.00 });
+      await saveSettings(); renderAdminCoins(); renderCoins();
+    });
+    wrap.appendChild(addBtn);
+  }
+  function renderAdminProofs(){
+    var wrap = $('proofsListAdmin');
+    wrap.innerHTML = settings.proofs.map(function(p){
+      return '<div class="row-card"><div class="row-top"><div class="rid">' + escapeHtml(p.id) + '</div>' +
+        '<button class="btn btn-danger-outline btn-sm" data-pact="delete" data-pid="' + escapeHtml(p.id) + '">Excluir</button></div>' +
+        '<div class="field"><label>URL da imagem</label><input value="' + escapeHtml(p.img) + '" data-pfield="img" data-pid="' + escapeHtml(p.id) + '"></div>' +
+        '<div class="field-row"><div class="field"><label>Título</label><input value="' + escapeHtml(p.title) + '" data-pfield="title" data-pid="' + escapeHtml(p.id) + '"></div>' +
+        '<div class="field"><label>Data</label><input type="date" value="' + p.date + '" data-pfield="date" data-pid="' + escapeHtml(p.id) + '"></div></div>' +
+        '<div class="field" style="margin:0;"><label>Descrição</label><textarea data-pfield="desc" data-pid="' + escapeHtml(p.id) + '">' + escapeHtml(p.desc) + '</textarea></div></div>';
+    }).join('');
+    wrap.querySelectorAll('[data-pfield]').forEach(function(inp){
+      inp.addEventListener('change', async function(e){
+        var p = settings.proofs.find(function(x){ return x.id===inp.dataset.pid; });
+        if(p){ p[inp.dataset.pfield] = e.target.value; await saveSettings(); renderProofs(); }
+      });
+    });
+    wrap.querySelectorAll('[data-pact="delete"]').forEach(function(b){
+      b.addEventListener('click', async function(){
+        settings.proofs = settings.proofs.filter(function(x){ return x.id!==b.dataset.pid; });
+        await saveSettings(); renderAdminProofs(); renderProofs();
+        showToast('Prova removida.');
+      });
+    });
+    var addBtn = document.createElement('button');
+    addBtn.className = 'btn btn-ghost btn-sm';
+    addBtn.textContent = '+ Nova prova';
+    addBtn.addEventListener('click', async function(){
+      settings.proofs.unshift({ id: genId('pr').toLowerCase(), img:'https://picsum.photos/seed/' + Date.now() + '/400/260', title:'Nova prova', desc:'Descrição da entrega', date:new Date().toISOString().slice(0,10), status:'concluido' });
+      await saveSettings(); renderAdminProofs(); renderProofs();
+    });
+    wrap.appendChild(addBtn);
   }
   function renderAdminEditor(){
     var wrap = $('editorCategories');
