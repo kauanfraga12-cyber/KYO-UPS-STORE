@@ -1980,6 +1980,53 @@
     });
   }
 
+
+  function renderBfPacks(){
+    var grid = $('bfPackGrid');
+    grid.innerHTML = settings.bfPackages.map(function(p){
+      return '<div class="pack-card' + (p.featured?' featured':'') + '">' +
+        (p.featured ? '<span class="pack-tag">Popular</span>' : '') +
+        '<div class="pack-icon">' + p.icon + '</div>' +
+        '<h4>' + escapeHtml(p.name) + '</h4>' +
+        '<p class="pack-desc">' + escapeHtml(p.desc||'') + '</p>' +
+        '<ul>' + (p.items||[]).map(function(i){ return '<li>' + escapeHtml(i.name) + (i.qty>1 ? ' <b style="color:var(--gold);">×'+i.qty+'</b>' : '') + '</li>'; }).join('') + '</ul>' +
+        '<div class="pack-price"><span class="now">' + formatBRL(p.total) + '</span>' + (p.value ? '<span class="was">' + formatBRL(p.value) + '</span>' : '') + '</div>' +
+        '<button class="btn btn-primary btn-sm" style="width:100%; margin-top:12px;" data-bfpack-add="' + escapeHtml(p.id) + '">Adicionar ao carrinho</button></div>';
+    }).join('');
+    grid.querySelectorAll('[data-bfpack-add]').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        var p = settings.bfPackages.find(function(x){ return x.id===btn.dataset.bfpackAdd; });
+        if(!p) return;
+        (p.items||[]).forEach(function(i){
+          var cat = settings.prices.find(function(c){ return c.items.some(function(it){ return it.name===i.name; }); });
+          if(cat){ var it = cat.items.find(function(x){ return x.name===i.name; }); addToCart(cat.id, i.name, it.price, i.qty||1); }
+        });
+        renderCart(); renderSimItems(); renderPriceTable();
+        showToast('Pacote "' + p.name + '" adicionado ao carrinho!', true);
+      });
+    });
+  }
+
+  function renderBfCoins(){
+    var grid = $('bfCoinGrid');
+    grid.innerHTML = settings.bfCoins.map(function(c){
+      return '<div class="pack-card"><div class="pack-icon">' + c.icon + '</div>' +
+        '<h4>' + escapeHtml(c.name) + '</h4>' +
+        '<p class="pack-desc">' + escapeHtml(c.desc||'') + '</p>' +
+        '<div class="pack-price"><span class="now">' + formatBRL(c.price) + '</span></div>' +
+        '<button class="btn btn-teal btn-sm" style="width:100%; margin-top:12px;" data-bfcoin-add="' + escapeHtml(c.id) + '">Adicionar ao carrinho</button></div>';
+    }).join('');
+    grid.querySelectorAll('[data-bfcoin-add]').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        var c = settings.bfCoins.find(function(x){ return x.id===btn.dataset.bfcoinAdd; });
+        if(!c) return;
+        addToCart('moedas', c.name, c.price, 1);
+        renderCart(); renderSimItems(); renderPriceTable();
+        showToast(c.name + ' adicionado ao carrinho!', true);
+      });
+    });
+  }
+
   function renderProofs(){
     var grid = $('proofGrid');
     if(settings.proofs.length===0){ grid.innerHTML = '<div class="empty-state">Nenhuma prova cadastrada ainda.</div>'; return; }
@@ -2954,6 +3001,8 @@
     renderPackages();
     renderCoins();
     renderProofs();
+    renderBfPacks();
+    renderBfCoins();
     renderReviews(); renderStarInput();
     renderEvents();
     await refreshRanking();
