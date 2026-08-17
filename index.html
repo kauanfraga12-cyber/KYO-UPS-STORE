@@ -1430,6 +1430,30 @@
     { id:"ev3", title:"Dia do Nível Máximo", desc:"Preço especial no pack Nível Máximo + 1.000 fragmentos de brinde.", date:"2026-08-30", status:"acontecer" }
   ];
 
+  var DEFAULT_BF_PACKAGES = [
+    { id:"bf-iniciante", icon:"🌱", name:"Blox Iniciante", desc:"Começo forte: maestria + níveis + fragmentos.", featured:false,
+      items:[{name:"500 Maestria", qty:1},{name:"1.000 Níveis", qty:1},{name:"10k Fragmentos", qty:1},{name:"100 Desvios", qty:1}],
+      total:26.00, value:32.50 },
+    { id:"bf-bounty", icon:"💀", name:"Blox Bounty", desc:"Foco em bounty e combate para subir de posto.", featured:true,
+      items:[{name:"5M de Bounty", qty:1},{name:"Death Step", qty:1},{name:"1k Fragmentos", qty:1},{name:"500 Maestria", qty:1}],
+      total:34.00, value:43.40 },
+    { id:"bf-leviata", icon:"🐋", name:"Blox Leviatã", desc:"Coração de Leviatã + cooldown resetado no mar.", featured:false,
+      items:[{name:"Coração Leviatã (1 Levi)", qty:1},{name:"Tirar Cooldown", qty:1},{name:"5 Scrolls Lendários", qty:1},{name:"10k Fragmentos", qty:1}],
+      total:26.50, value:33.00 },
+    { id:"bf-race", icon:"⚡", name:"Blox Raças V4", desc:"Raças V4 completas para dominar o combate.", featured:true,
+      items:[{name:"6 Raças V4 Full", qty:1},{name:"God Human", qty:1},{name:"30M de Bounty", qty:1},{name:"10 Scrolls Míticos", qty:1}],
+      total:390.00, value:490.00 }
+  ];
+
+  var DEFAULT_BF_COINS = [
+    { id:"bf-robux100", icon:"🪙", name:"100 Robux", desc:"Crédito de 100 Robux direto na sua conta.", qty:100, price:7.00 },
+    { id:"bf-robux400", icon:"🪙", name:"400 Robux", desc:"Crédito de 400 Robux com desconto.", qty:400, price:24.00 },
+    { id:"bf-frag1k", icon:"💎", name:"1.000 Fragmentos", desc:"Fragmentos para desbloquear raças e habilidades.", qty:1000, price:15.00 },
+    { id:"bf-frag5k", icon:"💎", name:"5.000 Fragmentos", desc:"Pacote grande de fragmentos com melhor preço.", qty:5000, price:55.00 },
+    { id:"bf-belly1b", icon:"💰", name:"1 Bilhão de Bellys", desc:"Bellys para comprar tudo o que precisar.", qty:1000000000, price:35.00 },
+    { id:"bf-gemas", icon:"💠", name:"1.000 Gemas", desc:"Gemas para itens exclusivos.", qty:1000, price:20.00 }
+  ];
+
   var DEFAULT_REVIEWS = [
     { id:"r1", name:"Kaito_br", rating:5, text:"Serviço rápido e de confiança. Upou minha maestria em 1 dia, recomendo demais!", date:Date.now()-86400000*6 },
     { id:"r2", name:"FrutasLord", rating:5, text:"Comprei o pack Lendário e o uper foi super atencioso. Pagamento via PIX sem dor de cabeça.", date:Date.now()-86400000*3 },
@@ -1445,7 +1469,7 @@
   /* ============================================================
      ESTADO
      ============================================================ */
-  var settings = { config:Object.assign({}, DEFAULT_CONFIG), prices:JSON.parse(JSON.stringify(DEFAULT_PRICES)), packages:JSON.parse(JSON.stringify(DEFAULT_PACKAGES)), coins:JSON.parse(JSON.stringify(DEFAULT_COINS)), proofs:JSON.parse(JSON.stringify(DEFAULT_PROOFS)), events:JSON.parse(JSON.stringify(DEFAULT_EVENTS)), admin:{ salt:null, hash:null } };
+  var settings = { config:Object.assign({}, DEFAULT_CONFIG), prices:JSON.parse(JSON.stringify(DEFAULT_PRICES)), packages:JSON.parse(JSON.stringify(DEFAULT_PACKAGES)), coins:JSON.parse(JSON.stringify(DEFAULT_COINS)), proofs:JSON.parse(JSON.stringify(DEFAULT_PROOFS)), events:JSON.parse(JSON.stringify(DEFAULT_EVENTS)), bfPackages:JSON.parse(JSON.stringify(DEFAULT_BF_PACKAGES)), bfCoins:JSON.parse(JSON.stringify(DEFAULT_BF_COINS)), admin:{ salt:null, hash:null } };
   var users = [];
   var orders = [];
   var reviews = JSON.parse(JSON.stringify(DEFAULT_REVIEWS));
@@ -1488,7 +1512,7 @@
      PERSISTÊNCIA — SUPABASE
      ============================================================ */
   function sbConfigData(){
-    return { config: settings.config, prices: settings.prices, packages: settings.packages, events: settings.events, coins: settings.coins, proofs: settings.proofs, admin: settings.admin };
+    return { config: settings.config, prices: settings.prices, packages: settings.packages, events: settings.events, coins: settings.coins, proofs: settings.proofs, bfPackages: settings.bfPackages, bfCoins: settings.bfCoins, admin: settings.admin };
   }
   async function loadConfigSupabase(){
     try{
@@ -1503,6 +1527,8 @@
           events: (d.events && d.events.length) ? d.events : JSON.parse(JSON.stringify(DEFAULT_EVENTS)),
           coins: (d.coins && d.coins.length) ? d.coins : JSON.parse(JSON.stringify(DEFAULT_COINS)),
           proofs: (d.proofs && d.proofs.length) ? d.proofs : JSON.parse(JSON.stringify(DEFAULT_PROOFS)),
+          bfPackages: (d.bfPackages && d.bfPackages.length) ? d.bfPackages : JSON.parse(JSON.stringify(DEFAULT_BF_PACKAGES)),
+          bfCoins: (d.bfCoins && d.bfCoins.length) ? d.bfCoins : JSON.parse(JSON.stringify(DEFAULT_BF_COINS)),
           admin: d.admin || { salt: null, hash: null }
         };
       }
@@ -1724,6 +1750,8 @@
       if(!settings.events || settings.events.length===0) settings.events = JSON.parse(JSON.stringify(DEFAULT_EVENTS));
       if(!settings.coins || settings.coins.length===0) settings.coins = JSON.parse(JSON.stringify(DEFAULT_COINS));
       if(!settings.proofs || settings.proofs.length===0) settings.proofs = JSON.parse(JSON.stringify(DEFAULT_PROOFS));
+      if(!settings.bfPackages || settings.bfPackages.length===0) settings.bfPackages = JSON.parse(JSON.stringify(DEFAULT_BF_PACKAGES));
+      if(!settings.bfCoins || settings.bfCoins.length===0) settings.bfCoins = JSON.parse(JSON.stringify(DEFAULT_BF_COINS));
       if(!settings.config) settings.config = Object.assign({}, DEFAULT_CONFIG);
       if(!settings.admin) settings.admin = { salt:null, hash:null };
       users = await dbGet('shop.users', []);
