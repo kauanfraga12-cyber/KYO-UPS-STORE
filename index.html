@@ -1116,6 +1116,8 @@
         <button data-panel="panelEditor">Editor de Preços</button>
         <button data-panel="panelCoins">Moedas</button>
         <button data-panel="panelProofs">Provas</button>
+        <button data-panel="panelBfPacks">Blox Pacotes</button>
+        <button data-panel="panelBfCoins">Blox Moedas</button>
         <button data-panel="panelSettings">Configurações</button>
       </div>
 
@@ -1131,6 +1133,8 @@
       </div>
       <div class="admin-panel" id="panelCoins"><div id="coinsListAdmin"></div></div>
       <div class="admin-panel" id="panelProofs"><div id="proofsListAdmin"></div></div>
+      <div class="admin-panel" id="panelBfPacks"><div id="bfPacksListAdmin"></div></div>
+      <div class="admin-panel" id="panelBfCoins"><div id="bfCoinsListAdmin"></div></div>
       <div class="admin-panel" id="panelSettings">
         <div class="form-card" style="max-width:520px;">
           <div class="field"><label>Nome da loja</label><input id="cfgShopName"></div>
@@ -2612,7 +2616,7 @@
   });
 
   function renderAdminAll(){
-    renderAdminStats(); renderAdminOrders(); renderAdminUsers(); renderAdminReviews(); renderAdminEvents(); renderAdminMessages(); renderAdminEditor(); renderAdminCoins(); renderAdminProofs();
+    renderAdminStats(); renderAdminOrders(); renderAdminUsers(); renderAdminReviews(); renderAdminEvents(); renderAdminMessages(); renderAdminEditor(); renderAdminCoins(); renderAdminProofs(); renderAdminBfPacks(); renderAdminBfCoins();
   }
   function renderAdminStats(){
     $('statUsers').textContent = users.length;
@@ -2805,6 +2809,76 @@
     addBtn.addEventListener('click', async function(){
       settings.proofs.unshift({ id: genId('pr').toLowerCase(), img:'https://picsum.photos/seed/' + Date.now() + '/400/260', title:'Nova prova', desc:'Descrição da entrega', date:new Date().toISOString().slice(0,10), status:'concluido' });
       await saveSettings(); renderAdminProofs(); renderProofs();
+    });
+    wrap.appendChild(addBtn);
+  }
+
+  function renderAdminBfPacks(){
+    var wrap = $('bfPacksListAdmin');
+    wrap.innerHTML = settings.bfPackages.map(function(p){
+      return '<div class="row-card"><div class="row-top"><div class="rid">' + escapeHtml(p.id) + '</div>' +
+        '<button class="btn btn-danger-outline btn-sm" data-bpcact="delete" data-bpcid="' + escapeHtml(p.id) + '">Excluir</button></div>' +
+        '<div class="field-row"><div class="field"><label>Nome</label><input value="' + escapeHtml(p.name) + '" data-bpcfield="name" data-bpcid="' + escapeHtml(p.id) + '"></div>' +
+        '<div class="field"><label>Total (R$)</label><input type="number" step="0.01" value="' + p.total + '" data-bpcfield="total" data-bpcid="' + escapeHtml(p.id) + '"></div></div>' +
+        '<div class="field" style="margin:0;"><label>Descrição</label><textarea data-bpcfield="desc" data-bpcid="' + escapeHtml(p.id) + '">' + escapeHtml(p.desc) + '</textarea></div></div>';
+    }).join('');
+    wrap.querySelectorAll('[data-bpcfield]').forEach(function(inp){
+      inp.addEventListener('change', async function(e){
+        var p = settings.bfPackages.find(function(x){ return x.id===inp.dataset.bpcid; });
+        if(p){
+          p[inp.dataset.bpcfield] = inp.dataset.bpcfield==='total' ? Number(e.target.value) : e.target.value;
+          await saveSettings(); renderBfPacks();
+        }
+      });
+    });
+    wrap.querySelectorAll('[data-bpcact="delete"]').forEach(function(b){
+      b.addEventListener('click', async function(){
+        settings.bfPackages = settings.bfPackages.filter(function(x){ return x.id!==b.dataset.bpcid; });
+        await saveSettings(); renderAdminBfPacks(); renderBfPacks();
+        showToast('Pacote removido.');
+      });
+    });
+    var addBtn = document.createElement('button');
+    addBtn.className = 'btn btn-ghost btn-sm';
+    addBtn.textContent = '+ Novo pacote';
+    addBtn.addEventListener('click', async function(){
+      settings.bfPackages.unshift({ id: genId('bfp').toLowerCase(), icon:'🎮', name:'Novo pacote', desc:'Descrição do pacote', items:[{name:'1k Fragmentos', qty:1}], total:10.00, value:12.00 });
+      await saveSettings(); renderAdminBfPacks(); renderBfPacks();
+    });
+    wrap.appendChild(addBtn);
+  }
+
+  function renderAdminBfCoins(){
+    var wrap = $('bfCoinsListAdmin');
+    wrap.innerHTML = settings.bfCoins.map(function(c){
+      return '<div class="row-card"><div class="row-top"><div class="rid">' + escapeHtml(c.id) + '</div>' +
+        '<button class="btn btn-danger-outline btn-sm" data-bccact="delete" data-bccid="' + escapeHtml(c.id) + '">Excluir</button></div>' +
+        '<div class="field-row"><div class="field"><label>Nome</label><input value="' + escapeHtml(c.name) + '" data-bccfield="name" data-bccid="' + escapeHtml(c.id) + '"></div>' +
+        '<div class="field"><label>Preço (R$)</label><input type="number" step="0.01" value="' + c.price + '" data-bccfield="price" data-bccid="' + escapeHtml(c.id) + '"></div></div>' +
+        '<div class="field" style="margin:0;"><label>Descrição</label><textarea data-bccfield="desc" data-bccid="' + escapeHtml(c.id) + '">' + escapeHtml(c.desc) + '</textarea></div></div>';
+    }).join('');
+    wrap.querySelectorAll('[data-bccfield]').forEach(function(inp){
+      inp.addEventListener('change', async function(e){
+        var c = settings.bfCoins.find(function(x){ return x.id===inp.dataset.bccid; });
+        if(c){
+          c[inp.dataset.bccfield] = inp.dataset.bccfield==='price' ? Number(e.target.value) : e.target.value;
+          await saveSettings(); renderBfCoins();
+        }
+      });
+    });
+    wrap.querySelectorAll('[data-bccact="delete"]').forEach(function(b){
+      b.addEventListener('click', async function(){
+        settings.bfCoins = settings.bfCoins.filter(function(x){ return x.id!==b.dataset.bccid; });
+        await saveSettings(); renderAdminBfCoins(); renderBfCoins();
+        showToast('Moeda removida.');
+      });
+    });
+    var addBtn = document.createElement('button');
+    addBtn.className = 'btn btn-ghost btn-sm';
+    addBtn.textContent = '+ Nova moeda';
+    addBtn.addEventListener('click', async function(){
+      settings.bfCoins.unshift({ id: genId('bfc').toLowerCase(), icon:'🪙', name:'Nova moeda', desc:'Descrição da moeda', qty:1, price:10.00 });
+      await saveSettings(); renderAdminBfCoins(); renderBfCoins();
     });
     wrap.appendChild(addBtn);
   }
