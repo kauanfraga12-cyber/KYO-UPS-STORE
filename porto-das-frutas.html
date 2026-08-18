@@ -2162,12 +2162,18 @@
   });
 
   /* ---------- PIX ---------- */
+  function pixApiUrl(name){
+    var h = (location.hostname || '').toLowerCase();
+    if (h.indexOf('netlify') !== -1) return '/.netlify/functions/' + name;
+    return '/' + name;
+  }
+
   function startPixPayment(order){
     var area = $('chkPixArea');
     area.innerHTML = '<div style="padding:30px 0; color:var(--text-dim);">Gerando PIX…</div>';
     var body = { amount: order.total, order_id: order.id, description: 'Pedido ' + order.id, email: (currentUser && currentUser.email) || 'cliente@kyo-ups-store.netlify.app' };
     if(settings.config && settings.config.mpToken){ body.mp_token = settings.config.mpToken; }
-    fetch('/.netlify/functions/pix-create', {
+    fetch(pixApiUrl('pix-create'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body)
@@ -2239,7 +2245,7 @@
     if(chkPollTimer) clearInterval(chkPollTimer);
     chkPollTimer = setInterval(function(){
       if(!chkPixId) return;
-      fetch('/.netlify/functions/pix-check', {
+      fetch(pixApiUrl('pix-check'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id: chkPixId })
