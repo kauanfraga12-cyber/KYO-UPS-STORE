@@ -1462,14 +1462,14 @@
     { id:"pack-mitico", icon:"🔥", name:"Pack Mítico", desc:"Pergaminhos míticos e armas lendárias.", featured:false,
       items:[{name:"1 Scroll Mítico", qty:1},{name:"Dragon Storm", qty:1},{name:"3 Hakis Lendários", qty:1},{name:"1k Fragmentos", qty:1}],
       total:47.00, value:60.00 },
-    { id:"pack-supremo", icon:"👑", name:"Pack Supremo", desc:"O combo completo para dominar o jogo.", featured:true,
+    { id:"pack-supremo", icon:"👑", name:"Pack Supremo", desc:"O combo completo para dominar o jogo.", featured:true, badge_label:'Mais Vendido', badge_type:'bestseller',
       items:[{name:"God Human", qty:1},{name:"6 Raças V4 Full", qty:1},{name:"30M de Bounty", qty:1},{name:"10 Scrolls Míticos", qty:1}],
       total:390.00, value:490.00 }
   ];
 
   var DEFAULT_COINS = [
     { id:"coin-robux100", icon:"🪙", name:"100 Robux", desc:"Crédito de 100 Robux direto na sua conta.", qty:100, price:7.00 },
-    { id:"coin-robux400", icon:"🪙", name:"400 Robux", desc:"Crédito de 400 Robux com desconto.", qty:400, price:24.00 },
+    { id:"coin-robux400", icon:"🪙", name:"400 Robux", desc:"Crédito de 400 Robux com desconto.", qty:400, price:24.00, badge_label:'Promo', badge_type:'promo' },
     { id:"coin-frag1k", icon:"💎", name:"1.000 Fragmentos", desc:"Fragmentos para desbloquear raças e habilidades.", qty:1000, price:15.00 },
     { id:"coin-frag5k", icon:"💎", name:"5.000 Fragmentos", desc:"Pacote grande de fragmentos com melhor preço.", qty:5000, price:55.00 },
     { id:"coin-belly1b", icon:"💰", name:"1 Bilhão de Bellys", desc:"Bellys para comprar tudo o que precisar.", qty:1000000000, price:35.00 },
@@ -1492,7 +1492,7 @@
     { id:"bf-iniciante", icon:"🌱", name:"Blox Iniciante", desc:"Começo forte: maestria + níveis + fragmentos.", featured:false,
       items:[{name:"500 Maestria", qty:1},{name:"1.000 Níveis", qty:1},{name:"10k Fragmentos", qty:1},{name:"100 Desvios", qty:1}],
       total:26.00, value:32.50 },
-    { id:"bf-bounty", icon:"💀", name:"Blox Bounty", desc:"Foco em bounty e combate para subir de posto.", featured:true,
+    { id:"bf-bounty", icon:"💀", name:"Blox Bounty", desc:"Foco em bounty e combate para subir de posto.", featured:true, badge_label:'Lançamento', badge_type:'launch',
       items:[{name:"5M de Bounty", qty:1},{name:"Death Step", qty:1},{name:"1k Fragmentos", qty:1},{name:"500 Maestria", qty:1}],
       total:34.00, value:43.40 },
     { id:"bf-leviata", icon:"🐋", name:"Blox Leviatã", desc:"Coração de Leviatã + cooldown resetado no mar.", featured:false,
@@ -1505,7 +1505,7 @@
 
   var DEFAULT_BF_COINS = [
     { id:"bf-robux100", icon:"🪙", name:"100 Robux", desc:"Crédito de 100 Robux direto na sua conta.", qty:100, price:7.00 },
-    { id:"bf-robux400", icon:"🪙", name:"400 Robux", desc:"Crédito de 400 Robux com desconto.", qty:400, price:24.00 },
+    { id:"bf-robux400", icon:"🪙", name:"400 Robux", desc:"Crédito de 400 Robux com desconto.", qty:400, price:24.00, badge_label:'Promo', badge_type:'promo' },
     { id:"bf-frag1k", icon:"💎", name:"1.000 Fragmentos", desc:"Fragmentos para desbloquear raças e habilidades.", qty:1000, price:15.00 },
     { id:"bf-frag5k", icon:"💎", name:"5.000 Fragmentos", desc:"Pacote grande de fragmentos com melhor preço.", qty:5000, price:55.00 },
     { id:"bf-belly1b", icon:"💰", name:"1 Bilhão de Bellys", desc:"Bellys para comprar tudo o que precisar.", qty:1000000000, price:35.00 },
@@ -1550,6 +1550,10 @@
   function escapeHtml(s){ var d=document.createElement('div'); d.textContent = (s===null||s===undefined) ? '' : String(s); return d.innerHTML; }
   function formatDate(ts){ var d=new Date(ts); return d.toLocaleDateString('pt-BR') + ' ' + d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}); }
   function formatDateShort(ts){ var d=new Date(ts); return d.toLocaleDateString('pt-BR'); }
+  function packBadge(label, type){
+    if(!label) return '';
+    return '<span class="pack-badge ' + (type||'bestseller') + '">' + label + '</span>';
+  }
   function randomHex(n){ var a=new Uint8Array(n); crypto.getRandomValues(a); return Array.from(a).map(function(b){return b.toString(16).padStart(2,'0');}).join(''); }
   async function sha256(text){
     var buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
@@ -1988,6 +1992,7 @@
         '<h4>' + escapeHtml(p.name) + '</h4>' +
         '<p class="pack-desc">' + escapeHtml(p.desc||'') + '</p>' +
         '<ul>' + (p.items||[]).map(function(i){ return '<li>' + escapeHtml(i.name) + (i.qty>1 ? ' <b style="color:var(--gold);">×'+i.qty+'</b>' : '') + '</li>'; }).join('') + '</ul>' +
+        packBadge(p.badge_label, p.badge_type) +
         '<div class="pack-price"><span class="now">' + formatBRL(p.total) + '</span>' + (p.value ? '<span class="was">' + formatBRL(p.value) + '</span>' : '') + '</div>' +
         '<button class="btn btn-primary btn-sm" style="width:100%; margin-top:12px;" data-pack-add="' + escapeHtml(p.id) + '">Adicionar ao carrinho</button></div>';
     }).join('');
@@ -2011,6 +2016,7 @@
       return '<div class="pack-card"><div class="pack-icon">' + c.icon + '</div>' +
         '<h4>' + escapeHtml(c.name) + '</h4>' +
         '<p class="pack-desc">' + escapeHtml(c.desc||'') + '</p>' +
+        packBadge(c.badge_label, c.badge_type) +
         '<div class="pack-price"><span class="now">' + formatBRL(c.price) + '</span></div>' +
         '<button class="btn btn-teal btn-sm" style="width:100%; margin-top:12px;" data-coin-add="' + escapeHtml(c.id) + '">Adicionar ao carrinho</button></div>';
     }).join('');
@@ -2035,6 +2041,7 @@
         '<h4>' + escapeHtml(p.name) + '</h4>' +
         '<p class="pack-desc">' + escapeHtml(p.desc||'') + '</p>' +
         '<ul>' + (p.items||[]).map(function(i){ return '<li>' + escapeHtml(i.name) + (i.qty>1 ? ' <b style="color:var(--gold);">×'+i.qty+'</b>' : '') + '</li>'; }).join('') + '</ul>' +
+        packBadge(p.badge_label, p.badge_type) +
         '<div class="pack-price"><span class="now">' + formatBRL(p.total) + '</span>' + (p.value ? '<span class="was">' + formatBRL(p.value) + '</span>' : '') + '</div>' +
         '<button class="btn btn-primary btn-sm" style="width:100%; margin-top:12px;" data-bfpack-add="' + escapeHtml(p.id) + '">Adicionar ao carrinho</button></div>';
     }).join('');
@@ -2058,6 +2065,7 @@
       return '<div class="pack-card"><div class="pack-icon">' + c.icon + '</div>' +
         '<h4>' + escapeHtml(c.name) + '</h4>' +
         '<p class="pack-desc">' + escapeHtml(c.desc||'') + '</p>' +
+        packBadge(c.badge_label, c.badge_type) +
         '<div class="pack-price"><span class="now">' + formatBRL(c.price) + '</span></div>' +
         '<button class="btn btn-teal btn-sm" style="width:100%; margin-top:12px;" data-bfcoin-add="' + escapeHtml(c.id) + '">Adicionar ao carrinho</button></div>';
     }).join('');
