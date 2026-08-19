@@ -230,20 +230,6 @@
   .btn:disabled{opacity:0.5; cursor:not-allowed; filter:grayscale(0.4);}
 
   /* ================= HERO ================= */
-  .neon-grid-bg{position:absolute; inset:0; z-index:0; pointer-events:none;
-    background-image:
-      linear-gradient(rgba(0,240,255,0.06) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(0,240,255,0.06) 1px, transparent 1px);
-    background-size:44px 44px;
-    -webkit-mask-image:radial-gradient(circle at 50% 40%, #000 0%, transparent 78%);
-    mask-image:radial-gradient(circle at 50% 40%, #000 0%, transparent 78%);
-  }
-  @keyframes neonPulse{
-    0%,100%{opacity:.55; text-shadow:0 0 12px var(--neon-pink), 0 0 32px rgba(255,47,214,0.55);}
-    50%{opacity:1; text-shadow:0 0 18px var(--neon-pink), 0 0 48px rgba(255,47,214,0.8);}
-  }
-  .hero{position:relative;}
-  .hero-grid,.hero-trust,.hero-ctas{position:relative; z-index:1;}
   .proof-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:18px;}
   .proof-card{background:var(--surface); border:1px solid var(--border-strong); border-radius:var(--radius); overflow:hidden; transition:transform .2s, box-shadow .2s;}
   .proof-card:hover{transform:translateY(-4px); box-shadow:var(--neon-glow-violet);}
@@ -265,44 +251,57 @@
   .faq-item summary::after{content:'+'; font-family:var(--font-mono); color:var(--neon-cyan); font-size:1.2rem;}
   .faq-item[open] summary::after{content:'–';}
   .faq-item p{margin:10px 0 4px; color:var(--text-dim); font-size:0.9rem; line-height:1.6;}
-  .hero{padding:80px 0 64px; position:relative; overflow:hidden;}
+  .hero{position:relative; overflow:hidden;}
+  .hero-grid,.hero-trust,.hero-ctas{position:relative; z-index:1;}
+  .hero::before{
+    content:''; position:absolute; top:-180px; right:-160px; width:520px; height:520px; border-radius:50%;
+    background:radial-gradient(circle, rgba(167,139,250,0.20), transparent 65%); pointer-events:none; z-index:0;
+  }
+  .hero::after{
+    content:''; position:absolute; bottom:-140px; left:-120px; width:420px; height:420px; border-radius:50%;
+    background:radial-gradient(circle, rgba(247,126,180,0.16), transparent 65%); pointer-events:none; z-index:0;
+  }
+  @keyframes gradShift{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}
+  .hero{padding:80px 0 64px;}
   .hero-grid{display:grid; grid-template-columns:1.15fr 0.85fr; gap:48px; align-items:center;}
   @media (max-width:860px){ .hero-grid{grid-template-columns:1fr;} }
   .hero h1{font-size:clamp(2.6rem, 6vw, 4.2rem); line-height:1.06; text-shadow:0 2px 24px rgba(0,0,0,0.45);}
-  .hero h1 .grad-text{background-size:200% 200%; animation:neonPulse 2.6s ease-in-out infinite, gradShift 5s ease-in-out infinite;}
-  @keyframes gradShift{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}
-  .hero-particle{position:absolute; bottom:-20px; font-size:1.3rem; opacity:0; animation:floatUp linear infinite; pointer-events:none; z-index:0;}
-  @keyframes floatUp{0%{opacity:0; transform:translateY(0) rotate(0)}15%{opacity:.55}85%{opacity:.4}100%{opacity:0; transform:translateY(-560px) rotate(35deg)}}
+  .hero h1 .grad-text{background-size:200% 200%; animation:gradShift 5s ease-in-out infinite;}
+  .hero-particle{position:absolute; bottom:-20px; font-size:1.15rem; opacity:0; animation:floatUp linear infinite; pointer-events:none; z-index:0;}
+  @keyframes floatUp{0%{opacity:0; transform:translateY(0) rotate(0)}15%{opacity:.5}85%{opacity:.35}100%{opacity:0; transform:translateY(-560px) rotate(35deg)}}
   .feature-card{transition:transform .22s ease, box-shadow .22s ease, border-color .22s ease;}
-  .feature-card:hover{transform:translateY(-5px); box-shadow:0 16px 34px -12px rgba(150,120,255,.55); border-color:var(--violet);}
+  .feature-card:hover{transform:translateY(-5px); box-shadow:0 16px 34px -12px rgba(150,120,255,.45); border-color:var(--violet);}
   .hero p.tagline{font-size:1.06rem; color:var(--text-dim); max-width:46ch; margin-top:18px;}
   .hero-ctas{display:flex; gap:12px; margin-top:30px; flex-wrap:wrap;}
-  .hero-trust{display:flex; gap:22px; flex-wrap:wrap; margin-top:30px; font-family:var(--font-mono); font-size:0.78rem; color:var(--text-faint);}
-  .hero-trust span{display:flex; align-items:center; gap:7px;}
-  .hero-trust svg{width:16px; height:16px; color:var(--ok);}
+  .hero-trust{display:flex; gap:14px; flex-wrap:wrap; margin-top:30px; font-family:var(--font-mono); font-size:0.74rem; color:var(--text-dim);}
+  .hero-trust span{
+    display:inline-flex; align-items:center; gap:7px; padding:8px 14px;
+    background:var(--surface); border:1px solid var(--border-strong); border-radius:var(--radius-sm);
+  }
+  .hero-trust svg{width:15px; height:15px; color:var(--gold);}
 
   /* beacon */
   .beacon-wrap{display:flex; justify-content:center; align-items:center; position:relative; height:320px;}
   .beacon{
-    position:relative; width:230px; height:230px; border-radius:50%;
+    position:relative; width:230px; height:230px; border-radius:14px;
     background:radial-gradient(circle at 50% 42%, var(--surface-3), var(--bg-alt) 70%);
     border:1px solid var(--border-strong);
     display:flex; align-items:center; justify-content:center;
     box-shadow:0 0 0 1px rgba(0,0,0,0.3), var(--shadow-lg);
   }
   .beacon::before{
-    content:''; position:absolute; inset:-46px; border-radius:50%;
+    content:''; position:absolute; inset:-46px; border-radius:14px;
     background:conic-gradient(from 0deg, transparent 0deg, var(--beacon-color, var(--ok)) 14deg, transparent 40deg, transparent 360deg);
     opacity:0.6; filter:blur(2px); animation:sweep 4s linear infinite;
   }
   .beacon::after{
-    content:''; position:absolute; inset:-2px; border-radius:50%;
+    content:''; position:absolute; inset:-2px; border-radius:14px;
     border:1px dashed var(--beacon-color, var(--ok)); opacity:0.35; animation:spin-slow 18s linear infinite;
   }
   @keyframes sweep{ to{ transform:rotate(360deg); } }
   @keyframes spin-slow{ to{ transform:rotate(-360deg); } }
   .beacon-core{
-    width:84px; height:84px; border-radius:50%; background:var(--beacon-color, var(--ok));
+    width:84px; height:84px; border-radius:14px; background:var(--beacon-color, var(--ok));
     box-shadow:0 0 50px 10px var(--beacon-color, var(--ok));
     display:flex; align-items:center; justify-content:center; font-size:1.9rem;
     position:relative; z-index:2; animation:core-breathe 3s ease-in-out infinite;
@@ -310,12 +309,9 @@
   @keyframes core-breathe{ 0%,100%{transform:scale(1);} 50%{transform:scale(1.08);} }
   .beacon-label{
     position:absolute; bottom:-8px; left:50%; transform:translateX(-50%);
-    background:var(--surface); border:1px solid var(--border-strong); border-radius:999px;
+    background:var(--surface); border:1px solid var(--border-strong); border-radius:var(--radius-sm);
     padding:8px 18px; font-family:var(--font-mono); font-size:0.76rem; white-space:nowrap; box-shadow:var(--shadow-md);
   }
-
-  .wave-divider{height:52px; margin-top:8px;}
-  .wave-divider svg{width:100%; height:100%; display:block;}
 
   section{padding:72px 0;}
   .section-head{margin-bottom:34px; max-width:64ch;}
@@ -797,7 +793,6 @@
 
 <!-- ============ HOME ============ -->
 <section id="home" style="padding-top:0;">
-  <div class="neon-grid-bg"></div>
   <div class="container hero">
     <span class="hero-particle" style="left:8%; animation-duration:9s;">💖</span>
     <span class="hero-particle" style="left:22%; animation-duration:12s; animation-delay:2s;">✨</span>
@@ -832,15 +827,10 @@
       <div class="beacon-wrap">
         <div class="beacon">
           <div class="beacon-core" id="beaconCore">🟢</div>
-          <div class="beacon-label" id="beaconLabel">Loja Aberta</div>
+          <div class="beacon-label" id="beaconLabel" data-count="2400">Loja Aberta</div>
         </div>
       </div>
     </div>
-  </div>
-  <div class="wave-divider">
-    <svg viewBox="0 0 1200 60" preserveAspectRatio="none">
-      <path d="M0,30 C150,55 300,5 450,30 C600,55 750,5 900,30 C1050,55 1150,15 1200,30 L1200,60 L0,60 Z" fill="#0b1220"/>
-    </svg>
   </div>
 </section>
 
