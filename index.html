@@ -601,6 +601,29 @@
   }
   .toast.show{opacity:1; transform:translateX(-50%) translateY(0); pointer-events:auto;}
 
+  .social-note{
+    position:fixed; bottom:26px; left:26px; z-index:150; max-width:320px; width:calc(100vw - 52px);
+    background:rgba(24,16,34,0.92); backdrop-filter:blur(8px); border:1px solid var(--border-strong);
+    border-radius:var(--radius); box-shadow:var(--shadow-lg); padding:14px 16px;
+    display:flex; gap:12px; align-items:flex-start; opacity:0; pointer-events:none;
+    transform:translateX(-24px); transition:opacity .3s ease, transform .3s ease;
+  }
+  .social-note.show{opacity:1; pointer-events:auto; transform:translateX(0);}
+  .social-note .sn-avatar{
+    flex:none; width:38px; height:38px; border-radius:var(--radius-sm);
+    background:linear-gradient(135deg, var(--violet), var(--pink));
+    color:#fff; font-weight:800; font-size:1rem; display:flex; align-items:center; justify-content:center;
+  }
+  .social-note .sn-body{flex:1; min-width:0;}
+  .social-note .sn-head{display:flex; align-items:center; gap:8px; flex-wrap:wrap;}
+  .social-note .sn-name{font-weight:800; font-size:0.85rem; color:var(--text);}
+  .social-note .sn-stars{color:var(--gold); font-size:0.8rem; letter-spacing:1px;}
+  .social-note .sn-text{font-size:0.8rem; color:var(--text-dim); line-height:1.45; margin-top:4px;}
+  .social-note .sn-close{
+    background:none; border:none; color:var(--text-faint); font-size:1rem; line-height:1; padding:2px; cursor:pointer; flex:none;
+  }
+  .social-note .sn-close:hover{color:var(--text);}
+
   /* ================= ACCOUNT / ORDERS ================= */
   .order-card{background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-sm); padding:16px 18px; margin-bottom:12px;}
   .order-top{display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap;}
@@ -1306,6 +1329,18 @@
     <input id="botInput" placeholder="Escreva sua dúvida…" maxlength="300">
     <button class="btn btn-teal btn-sm" id="botSendBtn">Enviar</button>
   </div>
+</div>
+
+<div class="social-note" id="socialNote" aria-live="polite">
+  <div class="sn-avatar" id="snAvatar">A</div>
+  <div class="sn-body">
+    <div class="sn-head">
+      <span class="sn-name" id="snName"></span>
+      <span class="sn-stars" id="snStars"></span>
+    </div>
+    <div class="sn-text" id="snText"></div>
+  </div>
+  <button class="sn-close" id="snClose" aria-label="Fechar notificação">✕</button>
 </div>
 
 <div class="toast" id="toast"></div>
