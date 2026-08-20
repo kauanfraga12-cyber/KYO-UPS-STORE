@@ -318,6 +318,9 @@
   .section-head h2{font-size:clamp(1.8rem, 3.4vw, 2.5rem);}
   .section-head p{color:var(--text-dim); margin-top:10px; font-size:0.98rem;}
 
+  .fade-up{opacity:0; transform:translateY(18px); transition:opacity .6s ease, transform .6s ease;}
+  .fade-up.in{opacity:1; transform:translateY(0);}
+
   /* feature strip */
   .feature-strip{display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:14px;}
   .feature-card{
@@ -3283,6 +3286,30 @@
     renderQuickChips();
     renderAdminStats();
     mascotReact('welcome');
+    /* fade-up on scroll */
+    var fadeEls = document.querySelectorAll('.section-head, .pack-card, .feature-card, .review-card, .proof-card, .faq-item, .faq-step');
+    if('IntersectionObserver' in window){
+      var fadeObs = new IntersectionObserver(function(entries){
+        entries.forEach(function(en){
+          if(en.isIntersecting){ en.target.classList.add('in'); fadeObs.unobserve(en.target); }
+        });
+      }, { threshold: 0.12 });
+      fadeEls.forEach(function(el){ el.classList.add('fade-up'); fadeObs.observe(el); });
+    } else {
+      fadeEls.forEach(function(el){ el.classList.add('in'); });
+    }
+    /* beacon counter */
+    var bl = $('beaconLabel');
+    if(bl && bl.getAttribute('data-count')){
+      var targetCount = parseInt(bl.getAttribute('data-count'), 10);
+      var curCount = 0;
+      var stepCount = Math.max(1, Math.round(targetCount / 40));
+      var countTimer = setInterval(function(){
+        curCount += stepCount;
+        if(curCount >= targetCount){ curCount = targetCount; clearInterval(countTimer); }
+        bl.innerHTML = 'Loja Aberta · <span style="font-weight:800; color:var(--gold);">' + curCount.toLocaleString('pt-BR') + '</span> serviços';
+      }, 45);
+    }
   }
   init();
 })();
