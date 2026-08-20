@@ -997,6 +997,7 @@
       </div>
       <div class="field"><label>Comentário</label><textarea id="reviewText" maxlength="400" placeholder="Conte como foi sua experiência…"></textarea></div>
       <button class="btn btn-teal" id="reviewSubmitBtn">Enviar avaliação</button>
+      <button class="btn btn-ghost btn-sm" id="socialNoteToggle" style="justify-self:start;">Desativar notificações</button>
     </div>
     <div class="review-grid" id="reviewGrid"></div>
   </div>
@@ -1604,6 +1605,66 @@
     clearTimeout(t.__timer);
     t.__timer = setTimeout(function(){ t.classList.remove('show'); }, 3200);
   }
+
+  var snTimer = null;
+  var snIdx = 0;
+  function starsStr(n){
+    var s = '';
+    for(var i=0;i<5;i++){ s += i < n ? '★' : '☆'; }
+    return s;
+  }
+  function snPool(){
+    var pool = reviews.slice(0, 12);
+    var buys = [
+      { name:'Ana L.', rating:5, text:'Comprei o ' + (settings.packages[0] ? settings.packages[0].name : 'pacote') + ' e foi rápido demais!' },
+      { name:'Pedro M.', rating:5, text:'Pagamento via PIX e entrega no mesmo dia. Nota 10.' },
+      { name:'Julia R.', rating:4, text:'Adorei o atendimento, o uper explica tudo certinho.' },
+      { name:'Caio S.', rating:5, text:'Up limpo e seguro, sem ban. Recomendo!' },
+      { name:'Bia K.', rating:5, text:'Minha maestria subiu bem rápido. Muito obrigado!' },
+      { name:'Lucas T.', rating:4, text:'Bom preço e suporte atencioso no WhatsApp.' }
+    ];
+    buys.forEach(function(b){
+      pool.push({ name:b.name, rating:b.rating, text:b.text, date:Date.now() });
+    });
+    return pool;
+  }
+  function showSocialNote(){
+    var el = $('socialNote');
+    if(!el) return;
+    var pool = snPool();
+    if(pool.length === 0) return;
+    var item = pool[snIdx % pool.length];
+    snIdx++;
+    $('snAvatar').textContent = (item.name || '?').charAt(0).toUpperCase();
+    $('snName').textContent = item.name || 'Cliente';
+    $('snStars').textContent = starsStr(item.rating || 5);
+    $('snText').textContent = item.text || '';
+    el.classList.add('show');
+    snTimer = setTimeout(function(){ el.classList.remove('show'); }, 5000);
+  }
+  function startSocialNotes(){
+    stopSocialNotes();
+    if(('' + localStorage.getItem('loli.socialNote')) === 'off') return;
+    setTimeout(showSocialNote, 5000);
+    snTimer = setInterval(function(){
+      if(!document.hidden) showSocialNote();
+    }, 12000);
+  }
+  function stopSocialNotes(){
+    if(snTimer){ clearInterval(snTimer); snTimer = null; }
+    var el = $('socialNote');
+    if(el) el.classList.remove('show');
+  }
+  function setSocialNoteEnabled(on){
+    if(on){ localStorage.removeItem('loli.socialNote'); } else { localStorage.setItem('loli.socialNote', 'off'); }
+    startSocialNotes();
+    var t = $('socialNoteToggle');
+    if(t) t.textContent = on ? 'Desativar notificações' : 'Ativar notificações';
+  }
+  $('snClose').addEventListener('click', function(){
+    var el = $('socialNote');
+    if(el) el.classList.remove('show');
+  });
 
   /* ============================================================
      PERSISTÊNCIA — SUPABASE
@@ -3211,6 +3272,10 @@
     renderBfPacks();
     renderBfCoins();
     renderReviews(); renderStarInput();
+    startSocialNotes();
+    $('socialNoteToggle').addEventListener('click', function(){
+      setSocialNoteEnabled(('' + localStorage.getItem('loli.socialNote')) === 'off');
+    });
     renderEvents();
     await refreshRanking();
     renderChat();
