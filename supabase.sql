@@ -106,6 +106,22 @@ begin
 end;
 $$;
 
+-- Verifica se o usuário logado é admin.
+-- SECURITY DEFINER: executa como o dono (postgres), ignorando RLS,
+-- evitando a recursão infinita das políticas que consultam profiles.
+create or replace function public.is_admin()
+returns boolean
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select exists (
+    select 1 from public.profiles p
+    where p.id = auth.uid() and p.is_admin = true
+  );
+$$;
+
 -- Ranking de clientes que mais pagaram (pedidos pago/andamento/concluido)
 create or replace function public.get_ranking()
 returns table (username text, total numeric, cnt bigint)
@@ -126,6 +142,7 @@ $$;
 -- ------------------------------------------------------------
 grant execute on function public.handle_new_user() to authenticated, service_role;
 grant execute on function public.promote_admin() to anon, authenticated;
+grant execute on function public.is_admin() to anon, authenticated;
 grant execute on function public.get_ranking() to anon, authenticated;
 
 -- ------------------------------------------------------------
@@ -144,15 +161,13 @@ create policy sc_select on public.site_config for select using (true);
 drop policy if exists sc_insert on public.site_config;
 create policy sc_insert on public.site_config for insert with check (true);
 drop policy if exists sc_update on public.site_config;
-create policy sc_update on public.site_config for update using (
-  exists (select 1 from public.profiles p where p.id = auth.uid() and p.is_admin = true)
-);
+create policy sc_update on public.site_config for update using (public.is_admin());
 
 -- profiles: dono lê o próprio + admins leem; usuário só atualiza o próprio nome
 drop policy if exists pf_select on public.profiles;
 create policy pf_select on public.profiles for select using (
   auth.uid() = id
-  or exists (select 1 from public.profiles p where p.id = auth.uid() and p.is_admin = true)
+  or public.is_admin()
 );
 drop policy if exists pf_update on public.profiles;
 create policy pf_update on public.profiles for update using (auth.uid() = id);
@@ -161,18 +176,14 @@ create policy pf_update on public.profiles for update using (auth.uid() = id);
 drop policy if exists od_select on public.orders;
 create policy od_select on public.orders for select using (
   auth.uid() = user_id
-  or exists (select 1 from public.profiles p where p.id = auth.uid() and p.is_admin = true)
+  or public.is_admin()
 );
 drop policy if exists od_insert on public.orders;
 create policy od_insert on public.orders for insert with check (auth.uid() = user_id);
 drop policy if exists od_update on public.orders;
-create policy od_update on public.orders for update using (
-  exists (select 1 from public.profiles p where p.id = auth.uid() and p.is_admin = true)
-);
+create policy od_update on public.orders for update using (public.is_admin());
 drop policy if exists od_delete on public.orders;
-create policy od_delete on public.orders for delete using (
-  exists (select 1 from public.profiles p where p.id = auth.uid() and p.is_admin = true)
-);
+create policy od_delete on public.orders for delete using (public.is_admin());
 
 -- reviews: todos leem; usuário cria a própria; admin exclui
 drop policy if exists rv_select on public.reviews;
@@ -180,9 +191,7 @@ create policy rv_select on public.reviews for select using (true);
 drop policy if exists rv_insert on public.reviews;
 create policy rv_insert on public.reviews for insert with check (auth.uid() = user_id);
 drop policy if exists rv_delete on public.reviews;
-create policy rv_delete on public.reviews for delete using (
-  exists (select 1 from public.profiles p where p.id = auth.uid() and p.is_admin = true)
-);
+create policy rv_delete on public.reviews for delete using (public.is_admin());
 
 -- chat: todos leem; usuário cria; admin exclui
 drop policy if exists ch_select on public.chat_messages;
@@ -190,21 +199,15 @@ create policy ch_select on public.chat_messages for select using (true);
 drop policy if exists ch_insert on public.chat_messages;
 create policy ch_insert on public.chat_messages for insert with check (auth.uid() = user_id);
 drop policy if exists ch_delete on public.chat_messages;
-create policy ch_delete on public.chat_messages for delete using (
-  exists (select 1 from public.profiles p where p.id = auth.uid() and p.is_admin = true)
-);
+create policy ch_delete on public.chat_messages for delete using (public.is_admin());
 
 -- contacts: qualquer um envia; só admin lê/exclui
 drop policy if exists ct_select on public.contacts;
-create policy ct_select on public.contacts for select using (
-  exists (select 1 from public.profiles p where p.id = auth.uid() and p.is_admin = true)
-);
+create policy ct_select on public.contacts for select using (public.is_admin());
 drop policy if exists ct_insert on public.contacts;
 create policy ct_insert on public.contacts for insert with check (true);
 drop policy if exists ct_delete on public.contacts;
-create policy ct_delete on public.contacts for delete using (
-  exists (select 1 from public.profiles p where p.id = auth.uid() and p.is_admin = true)
-);
+create policy ct_delete on public.contacts for delete using (public.is_admin());
 
 -- ------------------------------------------------------------
 -- REALTIME: chat ao vivo
