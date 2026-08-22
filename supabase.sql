@@ -238,3 +238,81 @@ values (
   }'
 )
 on conflict (id) do nothing;
+
+-- ------------------------------------------------------------
+-- GAMIFICAÇÃO
+-- ------------------------------------------------------------
+create table if not exists public.goals (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid references auth.users (id) on delete cascade,
+  title text not null,
+  current_value numeric default 0,
+  target_value numeric,
+  done boolean default false,
+  created_at timestamptz default now()
+);
+
+create table if not exists public.diary_notes (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid references auth.users (id) on delete cascade,
+  order_id text not null,
+  note text not null default '',
+  created_at timestamptz default now()
+);
+
+create table if not exists public.shop_tasks (
+  id uuid primary key default gen_random_uuid(),
+  title text not null,
+  done boolean default false,
+  created_at timestamptz default now()
+);
+
+create table if not exists public.waitlist (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid references auth.users (id) on delete cascade,
+  username text not null,
+  game text not null default '',
+  handled boolean default false,
+  created_at timestamptz default now()
+);
+
+alter table public.goals enable row level security;
+alter table public.diary_notes enable row level security;
+alter table public.shop_tasks enable row level security;
+alter table public.waitlist enable row level security;
+
+drop policy if exists gl_select on public.goals;
+create policy gl_select on public.goals for select using (auth.uid() = user_id or public.is_admin());
+drop policy if exists gl_insert on public.goals;
+create policy gl_insert on public.goals for insert with check (auth.uid() = user_id);
+drop policy if exists gl_update on public.goals;
+create policy gl_update on public.goals for update using (auth.uid() = user_id or public.is_admin());
+drop policy if exists gl_delete on public.goals;
+create policy gl_delete on public.goals for delete using (auth.uid() = user_id or public.is_admin());
+
+drop policy if exists dn_select on public.diary_notes;
+create policy dn_select on public.diary_notes for select using (auth.uid() = user_id or public.is_admin());
+drop policy if exists dn_insert on public.diary_notes;
+create policy dn_insert on public.diary_notes for insert with check (auth.uid() = user_id);
+drop policy if exists dn_update on public.diary_notes;
+create policy dn_update on public.diary_notes for update using (auth.uid() = user_id or public.is_admin());
+drop policy if exists dn_delete on public.diary_notes;
+create policy dn_delete on public.diary_notes for delete using (auth.uid() = user_id or public.is_admin());
+
+drop policy if exists st_select on public.shop_tasks;
+create policy st_select on public.shop_tasks for select using (public.is_admin());
+drop policy if exists st_insert on public.shop_tasks;
+create policy st_insert on public.shop_tasks for insert with check (public.is_admin());
+drop policy if exists st_update on public.shop_tasks;
+create policy st_update on public.shop_tasks for update using (public.is_admin());
+drop policy if exists st_delete on public.shop_tasks;
+create policy st_delete on public.shop_tasks for delete using (public.is_admin());
+
+drop policy if exists wl_select on public.waitlist;
+create policy wl_select on public.waitlist for select using (public.is_admin() or auth.uid() = user_id);
+drop policy if exists wl_insert on public.waitlist;
+create policy wl_insert on public.waitlist for insert with check (auth.uid() = user_id);
+drop policy if exists wl_update on public.waitlist;
+create policy wl_update on public.waitlist for update using (public.is_admin() or auth.uid() = user_id);
+drop policy if exists wl_delete on public.waitlist;
+create policy wl_delete on public.waitlist for delete using (public.is_admin() or auth.uid() = user_id);

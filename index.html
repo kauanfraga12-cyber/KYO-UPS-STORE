@@ -85,6 +85,10 @@
     padding:20px;
     box-shadow:0 0 10px var(--neon-pink), 0 0 20px var(--neon-pink), inset 0 0 10px var(--neon-pink);
   }
+  .panel-title{
+    font-size:1.15rem; margin-bottom:12px; color:var(--neon-pink-soft);
+    border-bottom:2px dashed var(--neon-pink); padding-bottom:8px; text-transform:uppercase; font-weight:900;
+  }
   *{box-sizing:border-box;}
   html{scroll-behavior:smooth;}
   @media (prefers-reduced-motion: reduce){
@@ -864,6 +868,57 @@
   </div>
 </section>
 
+<!-- ============ GAMIFICAÇÃO ============ -->
+<section id="gamification" class="tab-section">
+  <div class="container">
+    <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:20px;">
+
+      <!-- DIÁRIO -->
+      <div class="neon-box">
+        <div class="panel-title">Meu Diário ✦</div>
+        <div id="diaryList" style="display:flex; flex-direction:column; gap:10px; max-height:260px; overflow:auto;"></div>
+      </div>
+
+      <!-- METAS -->
+      <div class="neon-box">
+        <div class="panel-title">Minhas Metas 🎯</div>
+        <div id="goalsList" style="display:flex; flex-direction:column; gap:10px; max-height:260px; overflow:auto;"></div>
+        <div style="display:flex; gap:8px; margin-top:12px;">
+          <input id="goalTitleInput" placeholder="Nova meta (ex: Maestria 600)" style="flex:1;">
+          <button class="btn btn-primary btn-sm" id="goalAddBtn">Adicionar</button>
+        </div>
+      </div>
+
+      <!-- ENTREGAS -->
+      <div class="neon-box">
+        <div class="panel-title">Entregas 📦</div>
+        <div id="deliveriesList" style="display:flex; flex-direction:column; gap:10px; max-height:260px; overflow:auto;"></div>
+      </div>
+
+      <!-- TAREFAS DA LOJA (admin) -->
+      <div class="neon-box" id="shopTasksPanel" style="display:none;">
+        <div class="panel-title">Tarefas da Loja ✅</div>
+        <div id="tasksList" style="display:flex; flex-direction:column; gap:10px; max-height:200px; overflow:auto;"></div>
+        <div style="display:flex; gap:8px; margin-top:12px;">
+          <input id="taskTitleInput" placeholder="Nova tarefa" style="flex:1;">
+          <button class="btn btn-primary btn-sm" id="taskAddBtn">Adicionar</button>
+        </div>
+      </div>
+
+      <!-- LISTA DE ESPERA -->
+      <div class="neon-box">
+        <div class="panel-title">Lista de Espera 🎀</div>
+        <div id="waitlistList" style="display:flex; flex-direction:column; gap:10px; max-height:200px; overflow:auto;"></div>
+        <div style="display:flex; gap:8px; margin-top:12px;">
+          <input id="waitGameInput" placeholder="Jogo/pedido" style="flex:1;">
+          <button class="btn btn-primary btn-sm" id="waitAddBtn">Entrar na fila</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
 <!-- ============ FEATURES ============ -->
 <section style="padding:0 0 72px;">
   <div class="container">
@@ -1568,6 +1623,7 @@
      ESTADO
      ============================================================ */
   var settings = { config:Object.assign({}, DEFAULT_CONFIG), prices:JSON.parse(JSON.stringify(DEFAULT_PRICES)), packages:JSON.parse(JSON.stringify(DEFAULT_PACKAGES)), coins:JSON.parse(JSON.stringify(DEFAULT_COINS)), proofs:JSON.parse(JSON.stringify(DEFAULT_PROOFS)), events:JSON.parse(JSON.stringify(DEFAULT_EVENTS)), bfPackages:JSON.parse(JSON.stringify(DEFAULT_BF_PACKAGES)), bfCoins:JSON.parse(JSON.stringify(DEFAULT_BF_COINS)), admin:{ salt:null, hash:null } };
+  var gam = { goals:[], diaryNotes:{}, tasks:[], waitlist:[] };
   var users = [];
   var orders = [];
   var reviews = JSON.parse(JSON.stringify(DEFAULT_REVIEWS));
@@ -1882,6 +1938,7 @@
       $('accountAvatar').textContent = '?';
       $('accountLabel').textContent = 'Entrar';
     }
+    renderGamification();
   }
 
   /* ============================================================
@@ -1932,6 +1989,155 @@
       if(!settings.admin.hash){ settings.admin.salt = randomHex(8); settings.admin.hash = await hashPass(DEFAULT_ADMIN_PASS, settings.admin.salt); await saveSettingsLocal(); }
       await restoreSessionLocal();
     }
+  }
+
+  /* ============================================================
+     GAMIFICAÇÃO
+     ============================================================ */
+  async function loadGamification(){
+    if(USE_SUPABASE && currentUser){
+      var g = await sb.from('goals').select('*').eq('user_id', currentUser.id);
+      var dn = await sb.from('diary_notes').select('*').eq('user_id', currentUser.id);
+      var t = await sb.from('shop_tasks').select('*').order('created_at',{ascending:true});
+      var w = await sb.from('waitlist').select('*').order('created_at',{ascending:true});
+      gam.goals = (g.data||[]).filter(function(x){ return x.user_id===currentUser.id; });
+      gam.diaryNotes = {};
+      (dn.data||[]).forEach(function(n){ gam.diaryNotes[n.order_id] = n.note; });
+      gam.tasks = (t.data||[]);
+      gam.waitlist = (w.data||[]);
+    } else if(!USE_SUPABASE){
+      gam.goals = await dbGet('shop.goals', []);
+      gam.diaryNotes = await dbGet('shop.diaryNotes', {});
+      gam.tasks = await dbGet('shop.tasks', []);
+      gam.waitlist = await dbGet('shop.waitlist', []);
+    }
+  }
+  async function saveGamification(){
+    if(USE_SUPABASE){
+      if(currentUser){
+        for(var i=0;i<gam.goals.length;i++){
+          var x = gam.goals[i];
+          await sb.from('goals').upsert({ id: x.id || undefined, user_id: currentUser.id, title: x.title, current_value: Number(x.current_value)||0, target_value: x.target_value ? Number(x.target_value) : null, done: !!x.done });
+        }
+      }
+      return;
+    }
+    await dbSet('shop.goals', gam.goals);
+    await dbSet('shop.diaryNotes', gam.diaryNotes);
+    await dbSet('shop.tasks', gam.tasks);
+    await dbSet('shop.waitlist', gam.waitlist);
+  }
+  function fmtDate(ts){
+    var d = new Date(ts);
+    return String(d.getDate()).padStart(2,'0') + '/' + String(d.getMonth()+1).padStart(2,'0');
+  }
+  function diaryRender(){
+    var el = $('diaryList'); if(!el) return;
+    if(!currentUser){ el.innerHTML = '<p style="color:var(--text-dim);">Entre para ver seu diário 🌸</p>'; return; }
+    var mine = orders.filter(function(o){ return o.userId === currentUser.id; }).slice().sort(function(a,b){ return b.timestamp - a.timestamp; });
+    if(!mine.length){ el.innerHTML = '<p style="color:var(--text-dim);">Nenhuma compra ainda 💕</p>'; return; }
+    el.innerHTML = mine.map(function(o){
+      return '<div style="border-bottom:1px dashed var(--border); padding:6px 0; font-size:0.85rem;">' +
+        '<b>' + fmtDate(o.timestamp) + '</b> — ' + (o.items&&o.items[0]?o.items[0].name:'Pedido') + ' · R$ ' + (Number(o.total)||0).toFixed(2) +
+        ' <span style="color:var(--gold);">' + (o.status||'') + '</span>' +
+        '<textarea data-diary="' + o.id + '" style="width:100%; margin-top:4px; font-size:0.75rem;" rows="1" placeholder="Nota...">' +
+          (gam.diaryNotes[o.id] || '') + '</textarea></div>';
+    }).join('');
+    el.querySelectorAll('[data-diary]').forEach(function(ta){
+      ta.addEventListener('change', function(){
+        gam.diaryNotes[ta.getAttribute('data-diary')] = ta.value;
+        saveGamification();
+      });
+    });
+  }
+  function goalsRender(){
+    var el = $('goalsList'); if(!el) return;
+    if(!gam.goals.length){ el.innerHTML = '<p style="color:var(--text-dim);">Nenhuma meta ainda 🎯</p>'; return; }
+    el.innerHTML = gam.goals.map(function(g,i){
+      var pct = (g.target_value) ? Math.min(100, Math.round(100*g.current_value/g.target_value)) : (g.done ? 100 : 0);
+      return '<div style="border-bottom:1px dashed var(--border); padding:6px 0;">' +
+        '<div style="display:flex; justify-content:space-between; align-items:center;">' +
+          '<b style="' + (g.done ? 'text-decoration:line-through; color:var(--text-dim);' : '') + '">' + g.title + '</b>' +
+          '<button data-goal-del="' + i + '" style="background:none; border:none; color:var(--danger); cursor:pointer;">✕</button>' +
+        '</div>' +
+        (g.target_value ? '<div style="height:8px; background:rgba(255,102,178,.15); border-radius:6px; margin:4px 0; overflow:hidden;">' +
+          '<div style="height:100%; width:' + pct + '%; background:linear-gradient(90deg,var(--neon-pink),var(--neon-cyan));"></div></div>' +
+          '<div style="display:flex; gap:6px; align-items:center; font-size:0.75rem;">' +
+            '<input data-goal-cur="' + i + '" type="number" value="' + g.current_value + '" style="width:64px;"> / ' + g.target_value +
+            '<button data-goal-done="' + i + '" class="btn btn-ghost btn-sm">' + (g.done?'Desfazer':'Concluir') + '</button>' +
+          '</div>' : '') +
+      '</div>';
+    }).join('');
+    el.querySelectorAll('[data-goal-del]').forEach(function(b){
+      b.addEventListener('click', function(){ gam.goals.splice(Number(b.getAttribute('data-goal-del')),1); saveGamification(); goalsRender(); });
+    });
+    el.querySelectorAll('[data-goal-cur]').forEach(function(inp){
+      inp.addEventListener('change', function(){
+        var i = Number(inp.getAttribute('data-goal-cur'));
+        gam.goals[i].current_value = Number(inp.value)||0;
+        saveGamification(); goalsRender();
+      });
+    });
+    el.querySelectorAll('[data-goal-done]').forEach(function(b){
+      b.addEventListener('click', function(){
+        var i = Number(b.getAttribute('data-goal-done'));
+        gam.goals[i].done = !gam.goals[i].done;
+        saveGamification(); goalsRender();
+      });
+    });
+  }
+  function deliveriesRender(){
+    var el = $('deliveriesList'); if(!el) return;
+    if(!currentUser){ el.innerHTML = '<p style="color:var(--text-dim);">Entre para ver suas entregas 📦</p>'; return; }
+    var mine = orders.filter(function(o){ return o.userId === currentUser.id && (o.status==='pago'||o.status==='andamento'||o.status==='concluido'); });
+    if(!mine.length){ el.innerHTML = '<p style="color:var(--text-dim);">Nenhuma entrega em andamento 📦</p>'; return; }
+    el.innerHTML = mine.map(function(o){
+      var steps = ['aguardando','pago','andamento','concluido'];
+      var cur = steps.indexOf(o.status); if(cur<0) cur = 0;
+      var bar = steps.map(function(s,i){
+        return '<span style="padding:2px 6px; border-radius:8px; font-size:0.7rem; ' + (i<=cur ? 'background:var(--neon-pink); color:#fff;' : 'background:rgba(255,102,178,.12); color:var(--text-dim);') + '">' + s + '</span>';
+      }).join(' → ');
+      return '<div style="border-bottom:1px dashed var(--border); padding:6px 0; font-size:0.8rem;"><b>' + (o.items&&o.items[0]?o.items[0].name:'Pedido') + '</b><br>' + bar + '</div>';
+    }).join('');
+  }
+  function tasksRender(){
+    var el = $('tasksList'); if(!el) return;
+    if(!gam.tasks.length){ el.innerHTML = '<p style="color:var(--text-dim);">Nenhuma tarefa ✅</p>'; return; }
+    el.innerHTML = gam.tasks.map(function(t,i){
+      return '<label style="display:flex; gap:8px; align-items:center; font-size:0.85rem; border-bottom:1px dashed var(--border); padding:4px 0; cursor:pointer;">' +
+        '<input type="checkbox" data-task="' + i + '" ' + (t.done?'checked':'') + '> ' + t.title + '</label>';
+    }).join('');
+    el.querySelectorAll('[data-task]').forEach(function(cb){
+      cb.addEventListener('change', function(){
+        var i = Number(cb.getAttribute('data-task'));
+        gam.tasks[i].done = cb.checked;
+        saveGamification(); tasksRender();
+      });
+    });
+  }
+  function waitlistRender(){
+    var el = $('waitlistList'); if(!el) return;
+    var open = gam.waitlist.filter(function(w){ return !w.handled; });
+    var myIdx = -1;
+    if(currentUser){ for(var k=0;k<open.length;k++){ if(open[k].user_id===currentUser.id || open[k].username===currentUser.name){ myIdx = k; break; } } }
+    el.innerHTML = open.map(function(w,i){
+      return '<div style="display:flex; justify-content:space-between; align-items:center; font-size:0.85rem; border-bottom:1px dashed var(--border); padding:4px 0;">' +
+        '<span>🎀 ' + w.username + (w.game?' — '+w.game:'') + (myIdx===i?' <b style="color:var(--gold);">(você é o #'+(i+1)+')</b>':'') + '</span>' +
+        (isAdmin ? '<button data-wl-done="' + i + '" class="btn btn-ghost btn-sm">Atender</button>' : '') +
+        '</div>';
+    }).join('') || '<p style="color:var(--text-dim);">Fila vazia 🎀</p>';
+    if(isAdmin){
+      el.querySelectorAll('[data-wl-done]').forEach(function(b){
+        b.addEventListener('click', function(){
+          var i = Number(b.getAttribute('data-wl-done'));
+          gam.waitlist.splice(i,1);
+          saveGamification(); waitlistRender();
+        });
+      });
+    }
+  }
+  function renderGamification(){
+    diaryRender(); goalsRender(); deliveriesRender(); tasksRender(); waitlistRender();
   }
 
   /* ============================================================
@@ -2599,6 +2805,7 @@
     }
     updateAccountUI();
     showAccountView();
+    loadGamification(); renderGamification();
     await afterAuth();
   });
   $('authName').addEventListener('keydown', function(e){ if(e.key==='Enter') $('authSubmitBtn').click(); });
@@ -3303,6 +3510,34 @@
     renderBfPacks();
     renderBfCoins();
     renderReviews(); renderStarInput();
+    await loadGamification();
+    renderGamification();
+    var shopTasksPanel = $('shopTasksPanel');
+    if(shopTasksPanel){ shopTasksPanel.style.display = isAdmin ? '' : 'none'; }
+    var gAdd = $('goalAddBtn');
+    if(gAdd){ gAdd.addEventListener('click', function(){
+      var v = $('goalTitleInput').value.trim();
+      if(!v || !currentUser){ if(!v){alert('Digite o nome da meta.');} if(!currentUser){alert('Entre para criar metas.');} return; }
+      gam.goals.push({ title:v, current_value:0, target_value:0, done:false });
+      $('goalTitleInput').value = '';
+      saveGamification(); goalsRender();
+    }); }
+    var tAdd = $('taskAddBtn');
+    if(tAdd){ tAdd.addEventListener('click', function(){
+      var v = $('taskTitleInput').value.trim();
+      if(!v) return;
+      gam.tasks.push({ title:v, done:false });
+      $('taskTitleInput').value = '';
+      saveGamification(); tasksRender();
+    }); }
+    var wAdd = $('waitAddBtn');
+    if(wAdd){ wAdd.addEventListener('click', function(){
+      if(!currentUser){ alert('Entre para entrar na fila.'); return; }
+      var g = $('waitGameInput').value.trim();
+      gam.waitlist.push({ user_id: currentUser.id, username: currentUser.name, game: g, handled: false });
+      $('waitGameInput').value = '';
+      saveGamification(); waitlistRender();
+    }); }
     startSocialNotes();
     $('socialNoteToggle').addEventListener('click', function(){
       setSocialNoteEnabled(('' + localStorage.getItem('loli.socialNote')) === 'off');
