@@ -185,6 +185,7 @@
   .navlinks button svg{width:15px; height:15px; opacity:0.85;}
   .navlinks button:hover{color:var(--text); background:var(--surface);}
   .navlinks button.active{color:#3b1020; background:linear-gradient(120deg,var(--pink),var(--violet));}
+  @media (max-width:1100px){ .navlinks{flex-wrap:wrap;} }
   .nav-actions{display:flex; align-items:center; gap:10px; flex-shrink:0;}
   .cart-btn{
     position:relative; background:var(--surface-2); border:1px solid var(--border); color:var(--text);
@@ -801,19 +802,11 @@
       <span id="brandName">LOLI Ups ❤</span>
     </div>
     <div class="navlinks">
-      <button data-nav="home" class="active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Início</button>
-      <button data-nav="simulador"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>Simulador</button>
-      <button data-nav="pacotes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8l-9-5-9 5v8l9 5 9-5V8z"/><path d="M3.3 7l8.7 5 8.7-5"/><path d="M12 22V12"/></svg>Pacotes</button>
-      <button data-nav="bloxfruits"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-6-6 6 6 0 0 0-6 6c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>Blox Fruits</button>
-      <button data-nav="moedas"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v10M9.5 9.5h5M9.5 14.5h5"/></svg>Moedas</button>
-      <button data-nav="tabela"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/></svg>Tabela</button>
-      <button data-nav="avaliacoes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>Avaliações</button>
-      <button data-nav="provas"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>Provas</button>
-      <button data-nav="eventos"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Eventos</button>
-      <button data-nav="ranking"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></svg>Ranking</button>
-      <button data-nav="chat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Chat</button>
-      <button data-nav="faq"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>FAQ</button>
-      <button data-nav="termos"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>Termos</button>
+      <button data-tab="inicio" class="active">🏠 Início</button>
+      <button data-tab="loja">🛍️ Loja</button>
+      <button data-tab="avaliacoes">⭐ Avaliações</button>
+      <button data-tab="ranking">🏆 Ranking</button>
+      <button data-tab="admin">🔐 Admin</button>
     </div>
     <div class="nav-actions">
       <button class="cart-btn" id="cartOpenBtn" title="Seu carrinho">
@@ -829,7 +822,7 @@
 </nav>
 
 <!-- ============ HOME ============ -->
-<section id="home" style="padding-top:0;">
+<section id="home" class="tab-section" style="padding-top:0;">
   <div class="container hero">
     <span class="hero-particle" style="left:8%; animation-duration:9s;">💖</span>
     <span class="hero-particle" style="left:22%; animation-duration:12s; animation-delay:2s;">✨</span>
@@ -838,15 +831,15 @@
     <span class="hero-particle" style="left:88%; animation-duration:11s; animation-delay:0.5s;">💖</span>
     <div class="hero-grid">
       <div>
-        <div class="eyebrow">Loja de Upagem — Blox Fruits</div>
-        <h1 id="heroTitle">LOLI <span class="grad-text">Ups</span> ❤</h1>
+        <div class="eyebrow">Cantinho Do Loli — Loja de Upagem</div>
+        <h1 id="heroTitle">Cantinho Do <span class="grad-text">Loli</span> ✦</h1>
         <p class="tagline" id="heroTagline">Upamos sua conta com segurança: maestria, níveis, fragmentos, hakis, leviatã e muito mais — simule o valor final, crie sua conta e pague via PIX.</p>
         <div class="hero-ctas">
-          <button class="btn btn-primary" data-nav="simulador">
+          <button class="btn btn-primary" data-jump="simulador">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
             Simular minha upagem
           </button>
-          <button class="btn btn-teal" data-nav="pacotes">
+          <button class="btn btn-teal" data-jump="pacotes">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8l-9-5-9 5v8l9 5 9-5V8z"/><path d="M3.3 7l8.7 5 8.7-5"/></svg>
             Ver Pacotes
           </button>
@@ -900,7 +893,7 @@
 </section>
 
 <!-- ============ SIMULADOR / CHECKOUT ============ -->
-<section id="simulador" class="section-bg">
+<section id="simulador" class="section-bg tab-section">
   <div class="container">
     <div class="section-head">
       <div class="eyebrow">Simulador de Compra</div>
@@ -934,7 +927,7 @@
 </section>
 
 <!-- ============ PACOTES ============ -->
-<section id="pacotes">
+<section id="pacotes" class="tab-section">
   <div class="container">
     <div class="section-head">
       <div class="eyebrow">Pacotes de UPS</div>
@@ -946,7 +939,7 @@
 </section>
 
 <!-- ============ BLOX FRUITS ============ -->
-<section id="bloxfruits" class="section-bg">
+<section id="bloxfruits" class="section-bg tab-section">
   <div class="container">
     <div class="section-head">
       <div class="eyebrow">Blox Fruits</div>
@@ -963,7 +956,7 @@
 </section>
 
 <!-- ============ TABELA DE PREÇOS ============ -->
-<section id="tabela" class="section-bg">
+<section id="tabela" class="section-bg tab-section">
   <div class="container">
     <div class="section-head">
       <div class="eyebrow">Tabela de Preços</div>
@@ -982,7 +975,7 @@
 </section>
 
 <!-- ============ LOJA DE MOEDAS ============ -->
-<section id="moedas" class="section-bg">
+<section id="moedas" class="section-bg tab-section">
   <div class="container">
     <div class="section-head">
       <div class="eyebrow">Loja de Moedas</div>
@@ -994,7 +987,7 @@
 </section>
 
 <!-- ============ AVALIAÇÕES ============ -->
-<section id="avaliacoes">
+<section id="avaliacoes" class="tab-section">
   <div class="container">
     <div class="section-head">
       <div class="eyebrow">Avaliações</div>
@@ -1015,7 +1008,7 @@
 </section>
 
 <!-- ============ EVENTOS ============ -->
-<section id="eventos" class="section-bg">
+<section id="eventos" class="section-bg tab-section">
   <div class="container">
     <div class="section-head">
       <div class="eyebrow">Eventos</div>
@@ -1027,7 +1020,7 @@
 </section>
 
 <!-- ============ PROVAS DE ENTREGA ============ -->
-<section id="provas">
+<section id="provas" class="tab-section">
   <div class="container">
     <div class="section-head">
       <div class="eyebrow">Provas de Entrega</div>
@@ -1039,7 +1032,7 @@
 </section>
 
 <!-- ============ RANKING ============ -->
-<section id="ranking">
+<section id="ranking" class="tab-section">
   <div class="container">
     <div class="section-head" style="max-width:100%; text-align:center; margin:0 auto 40px;">
       <div class="eyebrow" style="justify-content:center;">Ranking de Clientes</div>
@@ -1051,7 +1044,7 @@
 </section>
 
 <!-- ============ CHAT GERAL ============ -->
-<section id="chat" class="section-bg">
+<section id="chat" class="section-bg tab-section">
   <div class="container">
     <div class="section-head">
       <div class="eyebrow">Chat Geral</div>
@@ -1074,7 +1067,7 @@
 </section>
 
 <!-- ============ AJUDA / FAQ ============ -->
-<section id="faq" class="section-bg">
+<section id="faq" class="section-bg tab-section">
   <div class="container">
     <div class="section-head">
       <div class="eyebrow">Ajuda &amp; FAQ</div>
@@ -1132,7 +1125,7 @@
     </div>
     <div style="display:flex; align-items:center; gap:18px;">
       <div class="foot-links">
-        <a href="#" data-nav="termos">Termos</a>
+        <a href="#" data-jump="termos">Termos</a>
         <a href="#" id="footWhats">WhatsApp</a>
       </div>
       <button class="admin-link" id="openAdminBtn">Acesso da Equipe</button>
@@ -1141,7 +1134,7 @@
 </footer>
 
 <!-- ============ ADMIN ============ -->
-<section id="admin">
+<section id="admin" class="tab-section">
   <div class="container">
     <div id="adminLoginView">
       <div class="form-card admin-login-card">
@@ -3240,16 +3233,37 @@
   $('mascot').addEventListener('click', function(){ mascotReact('click'); });
 
   /* ============================================================
-     NAVEGAÇÃO
+     NAVEGAÇÃO — ABAS
      ============================================================ */
-  document.querySelectorAll('[data-nav]').forEach(function(btn){
-    btn.addEventListener('click', function(e){
-      e.preventDefault();
-      var target = btn.getAttribute('data-nav');
-      var el = $(target);
+  var TAB_SECTIONS = {
+    inicio:    ['home', 'gamification', 'chat'],
+    loja:      ['simulador', 'pacotes', 'bloxfruits', 'tabela', 'moedas', 'eventos', 'checkout'],
+    avaliacoes:['provas', 'avaliacoes', 'faq'],
+    ranking:   ['ranking'],
+    admin:     ['admin']
+  };
+  function showTab(tabId){
+    var order = TAB_SECTIONS[tabId] || [];
+    var all = document.querySelectorAll('.tab-section');
+    for(var i=0;i<all.length;i++){ all[i].style.display = 'none'; }
+    for(var j=0;j<order.length;j++){
+      var el = document.getElementById(order[j]);
+      if(el){ el.style.display = ''; }
+    }
+    document.querySelectorAll('.navlinks button').forEach(function(b){
+      b.classList.toggle('active', b.getAttribute('data-tab') === tabId);
+    });
+  }
+  document.querySelectorAll('[data-tab]').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      showTab(btn.getAttribute('data-tab'));
+    });
+  });
+  document.querySelectorAll('[data-jump]').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      var t = btn.getAttribute('data-jump');
+      var el = document.getElementById(t);
       if(el){ el.scrollIntoView({behavior:'smooth', block:'start'}); }
-      document.querySelectorAll('.navlinks button').forEach(function(b){ b.classList.remove('active'); });
-      document.querySelectorAll('.navlinks button[data-nav="'+target+'"]').forEach(function(b){ b.classList.add('active'); });
     });
   });
 
@@ -3258,6 +3272,12 @@
      ============================================================ */
   async function init(){
     await loadAll();
+    var defaultHidden = ['simulador','pacotes','bloxfruits','tabela','moedas','avaliacoes','eventos','provas','ranking','chat','faq','admin'];
+    defaultHidden.forEach(function(id){
+      var el = document.getElementById(id);
+      if(el){ el.style.display = 'none'; }
+    });
+    showTab('inicio');
     var splashEl = $('splash');
     function closeSplash(target){
       splashEl.classList.add('hide');
