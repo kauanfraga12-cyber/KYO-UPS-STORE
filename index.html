@@ -6,7 +6,7 @@
 <title>LOLI Ups ❤ — Loja de UPs</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="supabase-config.js"></script>
 <style>
@@ -34,48 +34,56 @@
   }
   /* ================= TOKENS ================= */
   :root{
-    --bg:#181022;
-    --bg-alt:#1f1428;
-    --surface:#241732;
-    --surface-2:#2e1d3f;
-    --surface-3:#382352;
-    --border:rgba(167,139,250,0.16);
-    --border-strong:rgba(245,217,168,0.38);
-    --parchment:#fff6fa;
+    --bg:#12041b;
+    --bg-alt:#1b0727;
+    --surface:#221030;
+    --surface-2:#2b1440;
+    --surface-3:#341a4e;
+    --border:rgba(255,102,178,0.22);
+    --border-strong:rgba(255,0,127,0.45);
+    --parchment:#fff0f6;
     --ink:#2b0f26;
-    --gold:#f5d9a8;
-    --gold-2:#e8b76a;
-    --gold-bright:#fce8c8;
-    --teal:#f77eb4;
-    --teal-deep:#d95f96;
-    --violet:#a78bfa;
-    --violet-deep:#8a5cf6;
-    --pink:#f77eb4;
-    --coral:#f0a580;
+    --gold:#ffd700;
+    --gold-2:#ffb84d;
+    --gold-bright:#ffe98a;
+    --teal:#ff66b2;
+    --teal-deep:#e04a9e;
+    --violet:#b14dff;
+    --violet-deep:#8a2be2;
+    --pink:#ff007f;
+    --coral:#ff5c8a;
     --green:#7ce8a5;
-    --text:#f6edf7;
-    --text-dim:#c9b6d4;
-    --text-faint:#8f7a9c;
+    --text:#fdf3fa;
+    --text-dim:#d9b8d6;
+    --text-faint:#a583a8;
     --ok:#7ce8a5;
-    --warn:#f5d9a8;
+    --warn:#ffd700;
     --danger:#ff6b8b;
-    --font-display:'Fredoka', sans-serif;
-    --font-pirate:'Fredoka', sans-serif;
-    --font-body:'Manrope', sans-serif;
-    --font-mono:'IBM Plex Mono', monospace;
-    --radius:6px;
-    --radius-sm:4px;
+    --font-display:'Nunito', sans-serif;
+    --font-pirate:'Nunito', sans-serif;
+    --font-body:'Nunito', sans-serif;
+    --font-mono:'Nunito', monospace;
+    --radius:20px;
+    --radius-sm:12px;
     --shadow-lg:0 24px 60px -20px rgba(0,0,0,0.65);
     --shadow-md:0 12px 32px -12px rgba(0,0,0,0.55);
-    --glow-teal:0 0 26px -6px rgba(247,126,180,0.45);
-    --glow-gold:0 0 26px -6px rgba(245,217,168,0.45);
-    --glow-violet:0 0 26px -6px rgba(167,139,250,0.45);
-    --neon-cyan:#a78bfa;
-    --neon-pink:#f77eb4;
-    --neon-violet:#8a5cf6;
-    --neon-glow-cyan:0 0 20px -6px rgba(167,139,250,0.45);
-    --neon-glow-pink:0 0 20px -6px rgba(247,126,180,0.45);
-    --neon-glow-violet:0 0 20px -6px rgba(138,92,246,0.45);
+    --glow-teal:0 0 26px -6px rgba(255,102,178,0.45);
+    --glow-gold:0 0 26px -6px rgba(255,215,0,0.45);
+    --glow-violet:0 0 26px -6px rgba(177,77,255,0.45);
+    --neon-pink:#ff007f;
+    --neon-pink-soft:#ff66b2;
+    --neon-violet:#b14dff;
+    --neon-cyan:#00e5ff;
+    --neon-glow-pink:0 0 10px #ff007f, 0 0 20px #ff007f;
+    --neon-glow-violet:0 0 10px #b14dff, 0 0 20px #b14dff;
+    --neon-glow-cyan:0 0 10px #00e5ff, 0 0 20px #00e5ff;
+  }
+  .neon-box{
+    background-color:rgba(255,20,147,0.05);
+    border:3px solid var(--neon-pink-soft);
+    border-radius:20px;
+    padding:20px;
+    box-shadow:0 0 10px var(--neon-pink), 0 0 20px var(--neon-pink), inset 0 0 10px var(--neon-pink);
   }
   *{box-sizing:border-box;}
   html{scroll-behavior:smooth;}
