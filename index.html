@@ -738,7 +738,7 @@
 
   /* ---- MASCOTE LOLI ---- */
   #mascot{position:fixed; right:18px; bottom:18px; z-index:9999; cursor:pointer;}
-  #mascot .mascot-img{width:104px; height:104px; border-radius:12px; object-fit:cover; border:3px solid var(--violet); box-shadow:0 0 26px -4px rgba(150,120,255,.9); animation:mascotFloat 3.4s ease-in-out infinite; background:#fff;}
+  #mascot .mascot-img{width:104px; height:104px; border-radius:50%; object-fit:cover; border:3px solid var(--neon-pink-soft); box-shadow:0 0 20px -4px var(--neon-pink); animation:mascotFloat 3.4s ease-in-out infinite; background:#fff;}
   @keyframes mascotFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
   #mascotBubble{position:absolute; bottom:118px; right:0; max-width:230px; background:#fff; color:#3a2a55; font-size:.82rem; padding:9px 12px; border-radius:10px 10px 4px 10px; box-shadow:0 10px 26px -8px rgba(0,0,0,.45); border:2px solid var(--violet); display:none; line-height:1.4;}
   #mascotBubble::after{content:''; position:absolute; top:100%; right:22px; border:7px solid transparent; border-top-color:var(--violet);}
@@ -760,7 +760,7 @@
 
 <!-- ============ SPLASH ============ -->
 <div id="splash">
-  <div class="splash-heart">❤</div>
+  <div class="splash-heart">✨</div>
   <div class="splash-logo">
     <span class="splash-mark">L</span>
   </div>
@@ -1392,7 +1392,7 @@
 </div>
 
 <div class="social-note" id="socialNote" aria-live="polite">
-  <div class="sn-avatar" id="snAvatar">A</div>
+  <div class="sn-avatar" id="snAvatar">✨</div>
   <div class="sn-body">
     <div class="sn-head">
       <span class="sn-name" id="snName"></span>
@@ -1408,7 +1408,7 @@
 <!-- ============ MASCOTE LOLI ============ -->
 <div id="mascot" title="LOLI-chan">
   <div id="mascotBubble"></div>
-  <img class="mascot-img" src="assets/mascot.jpg" alt="Mascote LOLI-chan">
+  <img class="mascot-img" id="mascotImg" src="assets/mascot-teto.gif" alt="Mascote LOLI-chan">
   <div id="mascotHearts">💕</div>
 </div>
 
@@ -1695,7 +1695,8 @@
     if(pool.length === 0) return;
     var item = pool[snIdx % pool.length];
     snIdx++;
-    $('snAvatar').textContent = (item.name || '?').charAt(0).toUpperCase();
+    var snAvatars = { 'Ana L.':'🌸', 'Pedro M.':'⭐', 'Julia R.':'💖', 'Caio S.':'🌈', 'Bia K.':'🎀', 'Lucas T.':'✨' };
+    $('snAvatar').textContent = snAvatars[item.name] || (item.name || '?').charAt(0).toUpperCase();
     $('snName').textContent = item.name || 'Cliente';
     $('snStars').textContent = starsStr(item.rating || 5);
     $('snText').textContent = item.text || '';
@@ -3408,6 +3409,12 @@
     'Pixinho aprovado = felicidade 💖'
   ];
   var mascotTimer = null;
+  function setMascotGif(kind){
+    var img = $('mascotImg');
+    if(!img) return;
+    var map = { happy:'assets/mascot-catgirl.gif', sad:'assets/mascot-momona.gif', default:'assets/mascot-teto.gif' };
+    img.src = map[kind] || map.default;
+  }
   function mascotSay(text, cls){
     var b = $('mascotBubble');
     b.textContent = text;
@@ -3427,15 +3434,16 @@
     h.classList.add('pop');
   }
   function mascotReact(kind){
-    if(kind === 'cart'){ mascotSay('Adicionei ao carrinho! 💕', 'jump'); }
-    else if(kind === 'buy'){ mascotSay('Pedido confirmado! 💖', 'heart'); mascotHeartsPop(); }
-    else if(kind === 'error'){ mascotSay('Ops! Deu um errozinho 🥺', 'sad'); }
+    if(kind === 'cart'){ setMascotGif('default'); mascotSay('Adicionei ao carrinho! 💕', 'jump'); }
+    else if(kind === 'buy'){ setMascotGif('happy'); mascotSay('Pedido confirmado! 💖', 'heart'); mascotHeartsPop(); setTimeout(function(){ setMascotGif('default'); }, 3200); }
+    else if(kind === 'error'){ setMascotGif('sad'); mascotSay('Ops! Deu um errozinho 🥺', 'sad'); setTimeout(function(){ setMascotGif('default'); }, 3200); }
     else if(kind === 'click'){
+      setMascotGif('default');
       var i = Math.floor(Math.random()*MASCOT_PHRASES.length);
       mascotSay(MASCOT_PHRASES[i], 'wave');
       mascotHeartsPop();
     }
-    else { mascotSay('Bem-vindo(a) à LOLI Ups! 🌸', 'wave'); }
+    else { setMascotGif('default'); mascotSay('Bem-vindo(a) à Cantinho Do Loli! 🌸', 'wave'); }
   }
   $('mascot').addEventListener('click', function(){ mascotReact('click'); });
 
