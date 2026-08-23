@@ -1183,7 +1183,7 @@
         <a href="#" data-jump="termos">Termos</a>
         <a href="#" id="footWhats">WhatsApp</a>
       </div>
-      <button class="admin-link" id="openAdminBtn">Acesso da Equipe</button>
+      <button class="admin-link" id="openAdminBtn">🔐 Acesso da Equipe</button>
     </div>
   </div>
 </footer>
@@ -2919,7 +2919,7 @@
     $('adminLoginNote').style.display = 'none';
     $('adminLoginError').style.display = 'none';
     $('admin').classList.add('open');
-    $('admin').scrollIntoView({behavior:'smooth'});
+    showTab('admin');
     if(isAdmin){
       $('adminLoginView').style.display = 'none';
       $('adminMainView').style.display = 'block';
