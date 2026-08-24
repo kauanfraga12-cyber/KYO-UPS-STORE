@@ -754,6 +754,54 @@
   #mascot.heart .mascot-img{animation:mascotHeart .6s ease-in-out;}
   @keyframes mascotHeart{0%,100%{transform:scale(1)}50%{transform:scale(1.18)}}
   @media (max-width:600px){ #mascot .mascot-img{width:80px; height:80px;} #mascotBubble{max-width:190px; font-size:.75rem;} }
+
+  /* ================= MOBILE OTIMIZADO ================= */
+  @media (max-width:760px){
+    .container{padding:0 16px;}
+    .section-head{margin-bottom:24px;}
+    nav.mainnav .container{padding:8px 12px; gap:8px;}
+    .navlinks{flex-wrap:nowrap !important; overflow-x:auto; -webkit-overflow-scrolling:touch; scroll-snap-type:x proximity;}
+    .navlinks button{scroll-snap-align:start; flex:none;}
+    .brand{font-size:0.98rem; gap:7px;}
+    .brand-mark{width:30px; height:30px; border-radius:9px; font-size:0.95rem;}
+    .user-chip span#accountLabel{max-width:72px;}
+    .cart-btn{width:38px; height:38px;}
+    .hero{padding:44px 0 40px;}
+    .hero h1{font-size:clamp(2rem, 8.4vw, 2.7rem);}
+    .hero p.tagline{font-size:0.94rem;}
+    .hero-ctas{flex-direction:column; align-items:stretch;}
+    .hero-ctas .btn{width:100%; justify-content:center;}
+    table.pricetable{font-size:0.82rem;}
+    table.pricetable td{padding:10px 12px;}
+    .editor-item-row{grid-template-columns:1fr 108px 34px; gap:6px; padding:8px 12px;}
+    .editor-cat-head{padding:12px 14px;}
+    .add-item-row{padding:10px 14px 14px;}
+    .modal{padding:22px 18px; max-height:92vh;}
+    .bot-fab{width:54px; height:54px; bottom:16px; right:16px;}
+    .bot-window{height:min(520px, calc(100vh - 90px)); bottom:80px; right:14px;}
+    #mascot{right:12px; bottom:14px;}
+    .social-note{left:12px; bottom:12px; max-width:calc(100vw - 24px); width:calc(100vw - 24px);}
+    .stat-grid{grid-template-columns:repeat(2,1fr); gap:10px;}
+    .statusbar .container{justify-content:center; text-align:center;}
+    .statusbar .mini-links{display:none;}
+  }
+  @media (max-width:420px){
+    .brand{font-size:0.9rem;}
+    .navlinks button{font-size:0.74rem; padding:8px 10px; min-height:38px;}
+    .user-chip{padding:6px 9px 6px 6px; font-size:0.78rem;}
+    .user-chip .avatar{width:24px; height:24px; font-size:0.72rem;}
+    .nav-actions{gap:6px;}
+    .hero .eyebrow{font-size:0.62rem; letter-spacing:0.12em;}
+    .feature-strip{grid-template-columns:1fr 1fr !important;}
+    .feature-card{padding:14px;}
+    .pack-card{padding:16px;}
+    .proof-img{height:130px;}
+    .faq-item{padding:12px 14px;}
+    .row-top .row-actions .btn-sm{padding:7px 10px; font-size:0.72rem;}
+    .pix-qr{width:150px; height:150px;}
+    .pix-qr img{width:134px; height:134px;}
+    .bot-head{padding:12px;}
+  }
 </style>
 </head>
 <body>

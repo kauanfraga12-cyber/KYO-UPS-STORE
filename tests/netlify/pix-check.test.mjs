@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert';
-import { handler } from './pix-check.mjs';
+import { handler } from '../../netlify/functions/pix-check.mjs';
 
 function fakeFetch(status, body){
   return async () => ({ ok: status < 400, status, json: async () => body });
