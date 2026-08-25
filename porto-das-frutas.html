@@ -3583,7 +3583,16 @@
     btn.addEventListener('click', function(){
       var t = btn.getAttribute('data-jump');
       var el = document.getElementById(t);
-      if(el){ el.scrollIntoView({behavior:'smooth', block:'start'}); }
+      if(el && el.style.display !== 'none'){ el.scrollIntoView({behavior:'smooth', block:'start'}); return; }
+      var tabId = null;
+      for(var k in TAB_SECTIONS){
+        if(TAB_SECTIONS[k].indexOf(t) !== -1){ tabId = k; break; }
+      }
+      if(tabId){ showTab(tabId); }
+      setTimeout(function(){
+        var target = document.getElementById(t);
+        if(target){ target.scrollIntoView({behavior:'smooth', block:'start'}); }
+      }, 60);
     });
   });
 
