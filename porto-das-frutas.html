@@ -755,10 +755,67 @@
   @keyframes mascotHeart{0%,100%{transform:scale(1)}50%{transform:scale(1.18)}}
   @media (max-width:600px){ #mascot .mascot-img{width:80px; height:80px;} #mascotBubble{max-width:190px; font-size:.75rem;} }
 
+  /* ================= LAYOUT COMPACTO ================= */
+  .container{max-width:1060px;}
+  section{padding:44px 0;}
+  .section-head{margin-bottom:20px;}
+  .section-head h2{font-size:clamp(1.6rem, 3vw, 2.1rem);}
+  .section-head p{margin-top:6px; font-size:0.92rem;}
+  .eyebrow{margin-bottom:8px;}
+  .hero{padding:40px 0 36px;}
+  .hero-grid{gap:24px;}
+  .hero p.tagline{margin-top:12px; font-size:0.98rem;}
+  .hero-ctas{margin-top:18px; gap:10px;}
+  .hero-trust{margin-top:16px; gap:10px;}
+  .hero-trust span{padding:6px 12px;}
+  .feature-strip{gap:10px;}
+  .feature-card{padding:14px 16px; border-radius:16px;}
+  .feature-card .f-icon{width:36px; height:36px; border-radius:10px; margin-bottom:8px;}
+  .feature-card .f-icon svg{width:18px; height:18px;}
+  .feature-card h4{font-size:0.95rem; margin-bottom:4px;}
+  .feature-card p{font-size:0.8rem;}
+  .sim-layout{gap:16px;}
+  .panel-head{padding:12px 18px;}
+  .panel-body{padding:14px 18px;}
+  .chip-row{padding-bottom:8px; margin-bottom:12px;}
+  .pack-grid{gap:12px;}
+  .pack-card{padding:16px; border-radius:16px;}
+  .pack-card .pack-icon{font-size:1.8rem; margin-bottom:8px;}
+  .pack-card h4{font-size:1.02rem; margin-bottom:6px;}
+  .pack-card .pack-desc{min-height:0; margin-bottom:4px;}
+  .pack-card ul{margin:8px 0 0;}
+  .pack-card li{padding:3px 0;}
+  .pack-price{margin-top:10px; padding-top:10px;}
+  .proof-grid{gap:12px;}
+  .proof-body{padding:12px 14px;}
+  .proof-img{height:140px;}
+  .review-grid{gap:12px;}
+  .review-card{padding:14px 16px; border-radius:16px; gap:8px;}
+  .event-grid{gap:10px;}
+  .event-card{padding:14px 18px; gap:14px; border-radius:16px;}
+  .event-date{padding:8px 6px; min-width:72px;}
+  .faq-steps{gap:10px; margin-bottom:20px;}
+  .faq-step{padding:12px 14px;}
+  .faq-item{padding:10px 14px;}
+  .neon-box{padding:14px 16px; border-radius:16px;}
+  .panel-title{margin-bottom:8px; font-size:1.02rem;}
+  .order-card{padding:12px 14px; margin-bottom:8px;}
+  .row-card{padding:12px 14px; margin-bottom:8px;}
+  .stat-card{padding:14px;}
+  .stat-card .num{font-size:1.5rem;}
+  .stat-grid{gap:10px; margin-bottom:18px;}
+  .editor-cat{margin-bottom:16px;}
+  .editor-item-row{padding:6px 16px;}
+  table.pricetable td{padding:9px 16px;}
+  .admin-tabs{margin-bottom:16px;}
+  .social-note{padding:12px 14px;}
+  footer{padding:28px 0; margin-top:0;}
+  #mascot .mascot-img{width:92px; height:92px;}
+
   /* ================= MOBILE OTIMIZADO ================= */
   @media (max-width:760px){
     .container{padding:0 16px;}
-    .section-head{margin-bottom:24px;}
+    .section-head{margin-bottom:16px;}
     nav.mainnav .container{padding:8px 12px; gap:8px;}
     .navlinks{flex-wrap:nowrap !important; overflow-x:auto; -webkit-overflow-scrolling:touch; scroll-snap-type:x proximity;}
     .navlinks button{scroll-snap-align:start; flex:none;}
@@ -766,7 +823,7 @@
     .brand-mark{width:30px; height:30px; border-radius:9px; font-size:0.95rem;}
     .user-chip span#accountLabel{max-width:72px;}
     .cart-btn{width:38px; height:38px;}
-    .hero{padding:44px 0 40px;}
+    .hero{padding:26px 0 24px;}
     .hero h1{font-size:clamp(2rem, 8.4vw, 2.7rem);}
     .hero p.tagline{font-size:0.94rem;}
     .hero-ctas{flex-direction:column; align-items:stretch;}
@@ -919,7 +976,7 @@
 <!-- ============ GAMIFICAÇÃO ============ -->
 <section id="gamification" class="tab-section">
   <div class="container">
-    <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:20px;">
+    <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:12px;">
 
       <!-- DIÁRIO -->
       <div class="neon-box">
@@ -968,7 +1025,7 @@
 </section>
 
 <!-- ============ FEATURES ============ -->
-<section style="padding:0 0 72px;">
+<section style="padding:0 0 40px;">
   <div class="container">
     <div class="feature-strip">
       <div class="feature-card">
