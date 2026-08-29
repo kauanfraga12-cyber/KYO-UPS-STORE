@@ -6,11 +6,14 @@
 
 -- 1) Tabela protegida com as credenciais do admin (não exposta a anon/authenticated)
 create table if not exists public.admin_creds (
-  id integer primary key default 1 check (id = 1),
+  id integer primary key,
   salt text not null,
   hash text not null,
   updated_at timestamptz default now()
 );
+
+-- Remove a restrição antiga que impedia múltiplas credenciais (check id = 1)
+alter table public.admin_creds drop constraint if exists admin_creds_id_check;
 
 alter table public.admin_creds enable row level security;
 
@@ -88,7 +91,6 @@ end;
 $$;
 
 -- 6) Permissões
-revoke execute on function public.promote_admin() from anon, authenticated;
 revoke execute on function public.promote_admin(text) from public;
 revoke execute on function public.promote_admin(text) from anon;
 grant execute on function public.promote_admin(text) to authenticated;
