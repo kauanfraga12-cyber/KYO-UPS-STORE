@@ -1,0 +1,75 @@
+name: Update Kimi Context
+
+on:
+  push:
+    branches: ["main"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  update-context:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Generate context from template + recent log
+        run: |
+          {
+            echo "# Contexto da Loja — Cantinho Do Loli ✦ (para a agente Kimi K3)"
+            echo ""
+            echo "Gerado automaticamente pelo GitHub Actions em $(date -u +'%Y-%m-%dT%H:%M:%SZ')."
+            echo ""
+            echo "## Estado atual (últimos commits na main)"
+            git log --oneline -10
+            echo ""
+            echo "> Cole o conteúdo completo de docs/KIMI-CONTEXT.md (mantido manualmente) junto deste resumo."
+            echo "> O arquivo docs/KIMI-CONTEXT.md é a fonte da verdade para o contexto completo."
+          } > kimi-context-generated.md
+
+      - name: Upsert context into Supabase
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          python3 - <<'EOF'
+          import json, os, urllib.request
+
+          content = open("kimi-context-generated.md", encoding="utf-8").read()
+          url = os.environ["SUPABASE_URL"].rstrip("/") + "/rest/v1/kimi_context"
+          key = os.environ["SUPABASE_SERVICE_ROLE_KEY"]
+
+          # Inserir sempre uma nova versão (versionamento por created_at)
+          data = json.dumps({"content": content}).encode()
+          req = urllib.request.Request(
+              url,
+              data=data,
+              method="POST",
+              headers={
+                  "apikey": key,
+                  "Authorization": "Bearer " + key,
+                  "Content-Type": "application/json",
+                  "Prefer": "return=minimal",
+              },
+          )
+          try:
+              with urllib.request.urlopen(req, timeout=30) as resp:
+                  print("INSERT kimi_context ->", resp.status)
+          except urllib.error.HTTPError as e:
+              print("ERRO", e.code, e.read().decode())
+              raise SystemExit(1)
+          EOF
+
+      - name: Commit generated context back
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add kimi-context-generated.md
+          if git diff --cached --quiet; then
+            echo "sem alterações no resumo; nada a commitar"
+          else
+            git commit -m "chore: regenerate kimi context summary"
+            git push
+          fi
